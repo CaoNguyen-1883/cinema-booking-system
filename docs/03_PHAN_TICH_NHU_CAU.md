@@ -1,0 +1,1646 @@
+# CHƯƠNG 3: PHÂN TÍCH NHU CẦU
+
+## Giới thiệu
+
+Sau khi đã xác định các yêu cầu nghiệp vụ và yêu cầu chức năng của hệ thống ở Chương 2, chương này sẽ đi sâu vào việc phân tích chi tiết các nhu cầu đó thông qua các mô hình và biểu đồ UML (Unified Modeling Language). Việc phân tích nhu cầu giúp chúng ta hiểu rõ hơn về cách hệ thống hoạt động, các tương tác giữa người dùng với hệ thống, và luồng xử lý của các chức năng chính.
+
+Chương này sẽ trình bày các nội dung sau:
+- Phân tích các đối tượng sử dụng hệ thống (Actor)
+- Mô hình hóa các tình huống sử dụng (Use Case)
+- Mô tả luồng hoạt động của các nghiệp vụ chính (Activity Diagram)
+- Phân tích trình tự tương tác giữa các thành phần (Sequence Diagram)
+- Mô tả trạng thái của các đối tượng quan trọng (State Diagram)
+
+Các mô hình này không chỉ giúp team phát triển hiểu rõ yêu cầu mà còn là cơ sở để thiết kế kiến trúc và triển khai hệ thống ở các chương tiếp theo.
+
+---
+
+## 3.1 Phân tích đối tượng sử dụng (Actor Analysis)
+
+Actor là các thực thể tương tác với hệ thống, có thể là con người (người dùng), hệ thống bên ngoài, hoặc thiết bị phần cứng. Dựa trên phân tích yêu cầu nghiệp vụ, hệ thống đặt vé rạp chiếu phim có các Actor chính sau:
+
+### 3.1.1 Khách hàng (Customer)
+
+**Mô tả:**
+Khách hàng là người dùng cuối của hệ thống, có nhu cầu xem phim và đặt vé trực tuyến.
+
+**Đặc điểm:**
+- Độ tuổi: Từ 15 tuổi trở lên (phần lớn 18-35 tuổi)
+- Thiết bị: Sử dụng web browser trên desktop, laptop, tablet, hoặc smartphone
+- Kỹ năng công nghệ: Cơ bản đến trung bình
+- Hành vi: Thường đặt vé trước 1-3 ngày, thích chọn ghế, thanh toán nhanh
+
+**Mục tiêu:**
+- Tìm kiếm phim và suất chiếu phù hợp
+- Đặt vé nhanh chóng và dễ dàng
+- Chọn ghế ngồi ưa thích
+- Thanh toán an toàn
+- Nhận vé điện tử ngay lập tức
+
+**Use Cases liên quan:**
+- Xem danh sách phim
+- Tìm kiếm phim
+- Xem chi tiết phim và lịch chiếu
+- Đăng ký tài khoản
+- Đăng nhập
+- Chọn suất chiếu
+- Chọn ghế
+- Thanh toán
+- Xem lịch sử đặt vé
+- Hủy vé
+- Tích lũy và sử dụng điểm thành viên
+
+### 3.1.2 Quản trị viên (Admin)
+
+**Mô tả:**
+Quản trị viên là nhân viên của chuỗi rạp, có quyền quản lý toàn bộ dữ liệu và cấu hình hệ thống.
+
+**Đặc điểm:**
+- Vai trò: Nhân viên IT hoặc quản lý cấp cao
+- Thiết bị: Desktop hoặc laptop
+- Kỹ năng công nghệ: Trung bình đến cao
+- Quyền hạn: Toàn quyền truy cập và chỉnh sửa
+
+**Mục tiêu:**
+- Quản lý thông tin phim đang chiếu
+- Cấu hình lịch chiếu và giá vé
+- Quản lý rạp và phòng chiếu
+- Theo dõi doanh thu và thống kê
+- Xử lý các vấn đề phát sinh
+
+**Use Cases liên quan:**
+- Quản lý phim (thêm, sửa, xóa)
+- Quản lý rạp và phòng chiếu
+- Tạo và quản lý suất chiếu
+- Xem báo cáo doanh thu
+- Xem thống kê đặt vé
+- Quản lý người dùng
+- Hủy suất chiếu
+
+### 3.1.3 Nhân viên rạp (Staff)
+
+**Mô tả:**
+Nhân viên rạp làm việc trực tiếp tại quầy vé, hỗ trợ khách hàng và xử lý các tình huống đặc biệt.
+
+**Đặc điểm:**
+- Vai trò: Nhân viên bán vé, nhân viên hỗ trợ
+- Thiết bị: Desktop tại quầy vé
+- Kỹ năng công nghệ: Cơ bản đến trung bình
+- Quyền hạn: Giới hạn ở một số chức năng
+
+**Mục tiêu:**
+- Hỗ trợ khách hàng đặt vé tại quầy
+- Kiểm tra và xác nhận vé
+- Xử lý hoàn tiền và hủy vé
+- Hỗ trợ khách hàng gặp sự cố
+
+**Use Cases liên quan:**
+- Đặt vé cho khách hàng
+- Kiểm tra vé (quét QR code)
+- Hủy vé và hoàn tiền
+- Xem lịch chiếu và tình trạng ghế
+
+### 3.1.4 Hệ thống thanh toán (Payment Gateway)
+
+**Mô tả:**
+Hệ thống bên ngoài cung cấp dịch vụ thanh toán trực tuyến (Momo, VNPay, v.v.).
+
+**Đặc điểm:**
+- Loại: External system actor
+- Giao tiếp: REST API, IPN (Instant Payment Notification), Redirect callback
+- Bảo mật: HTTPS, digital signature, hash validation
+
+**Mục tiêu:**
+- Xử lý giao dịch thanh toán
+- Thông báo kết quả giao dịch cho hệ thống
+- Đảm bảo tính bảo mật và chính xác
+
+**Use Cases liên quan:**
+- Xử lý thanh toán
+- Gửi callback kết quả thanh toán
+- Xử lý hoàn tiền
+
+### 3.1.5 Hệ thống Email (Email Service)
+
+**Mô tả:**
+Dịch vụ gửi email tự động (SMTP server hoặc third-party service như SendGrid).
+
+**Đặc điểm:**
+- Loại: External system actor
+- Giao tiếp: SMTP hoặc REST API
+- Chức năng: Gửi email xác nhận, thông báo
+
+**Mục tiêu:**
+- Gửi email xác nhận đăng ký
+- Gửi email vé điện tử
+- Gửi thông báo hủy vé
+- Gửi email quên mật khẩu
+
+**Use Cases liên quan:**
+- Gửi email xác nhận đặt vé
+- Gửi email thông báo hủy vé
+- Gửi email reset mật khẩu
+
+### 3.1.6 Hệ thống định thời (Scheduler)
+
+**Mô tả:**
+Thành phần tự động chạy các tác vụ theo lịch (cron job hoặc Spring Scheduler).
+
+**Đặc điểm:**
+- Loại: Internal system actor
+- Chức năng: Tự động hóa các tác vụ định kỳ
+- Thời gian: Chạy theo lịch cấu hình sẵn
+
+**Mục tiêu:**
+- Giải phóng ghế đã lock nhưng chưa thanh toán (sau 5 phút)
+- Tự động hủy vé quá hạn thanh toán
+- Gửi email nhắc nhở trước giờ chiếu (Phase 2)
+- Tổng hợp báo cáo hàng ngày
+
+**Use Cases liên quan:**
+- Giải phóng ghế lock timeout
+- Hủy booking chưa thanh toán
+- Tạo báo cáo tự động
+
+### Bảng tổng hợp Actor
+
+| Actor | Loại | Vai trò chính | Quyền hạn |
+|-------|------|---------------|-----------|
+| Customer | Human | Đặt vé, xem phim | Chỉ đọc danh sách, ghi booking của mình |
+| Admin | Human | Quản trị hệ thống | Toàn quyền CRUD tất cả dữ liệu |
+| Staff | Human | Hỗ trợ khách hàng | Đọc danh sách, xử lý booking, kiểm tra vé |
+| Payment Gateway | External System | Xử lý thanh toán | Không có quyền truy cập database |
+| Email Service | External System | Gửi thông báo | Không có quyền truy cập database |
+| Scheduler | Internal System | Tự động hóa tác vụ | Đọc và cập nhật trạng thái |
+
+---
+
+## 3.2 Sơ đồ Use Case (Use Case Diagram)
+
+Use Case Diagram mô tả các tính năng mà hệ thống cung cấp từ góc nhìn của người dùng. Mỗi use case đại diện cho một mục tiêu cụ thể mà actor muốn đạt được khi tương tác với hệ thống.
+
+### 3.2.1 Use Case Diagram tổng quan
+
+```
+                    Hệ thống đặt vé rạp chiếu phim
+
+┌────────────────────────────────────────────────────────────────────────┐
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    User Management                           │    │
+│  │                                                              │    │
+│  │  (UC-01) Đăng ký tài khoản                                  │    │
+│  │  (UC-02) Đăng nhập                                          │    │
+│  │  (UC-03) Đăng xuất                                          │    │
+│  │  (UC-04) Quên mật khẩu                                      │    │
+│  │  (UC-05) Đổi mật khẩu                                       │    │
+│  │  (UC-06) Cập nhật thông tin cá nhân                        │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    Movie Browsing                            │    │
+│  │                                                              │    │
+│  │  (UC-07) Xem danh sách phim                                │    │
+│  │  (UC-08) Tìm kiếm phim                                     │    │
+│  │  (UC-09) Xem chi tiết phim                                 │    │
+│  │  (UC-10) Xem lịch chiếu theo phim                         │    │
+│  │  (UC-11) Xem lịch chiếu theo rạp                          │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    Booking Process                           │    │
+│  │                                                              │    │
+│  │  (UC-12) Chọn suất chiếu                                   │    │
+│  │  (UC-13) Xem sơ đồ ghế                                     │    │
+│  │  (UC-14) Chọn ghế                   ────────────────┐      │    │
+│  │  (UC-15) Thanh toán                                 │      │    │
+│  │  (UC-16) Xác nhận đặt vé                           │      │    │
+│  │  (UC-17) Nhận vé điện tử                           │      │    │
+│  │                                                     │      │    │
+│  │  (UC-18) Xem lịch sử đặt vé                       │      │    │
+│  │  (UC-19) Xem chi tiết booking                      │      │    │
+│  │  (UC-20) Hủy vé                                    │      │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                 │      │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    Membership                                │    │
+│  │                                                              │    │
+│  │  (UC-21) Xem điểm tích lũy                                 │    │
+│  │  (UC-22) Sử dụng điểm đổi voucher                         │    │
+│  │  (UC-23) Xem lịch sử giao dịch điểm                       │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+        │               │              │               │
+        │               │              │               │
+    Customer         Staff          Admin     Payment Gateway
+     (Actor)        (Actor)        (Actor)       (Actor)
+
+
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Admin Use Cases                                 │
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    Movie Management                          │    │
+│  │                                                              │    │
+│  │  (UC-24) Thêm phim mới                                     │    │
+│  │  (UC-25) Cập nhật thông tin phim                          │    │
+│  │  (UC-26) Xóa phim                                         │    │
+│  │  (UC-27) Quản lý thể loại phim                            │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    Theater Management                        │    │
+│  │                                                              │    │
+│  │  (UC-28) Quản lý rạp                                       │    │
+│  │  (UC-29) Quản lý phòng chiếu                              │    │
+│  │  (UC-30) Cấu hình sơ đồ ghế                               │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    Show Management                           │    │
+│  │                                                              │    │
+│  │  (UC-31) Tạo suất chiếu                                    │    │
+│  │  (UC-32) Cập nhật suất chiếu                               │    │
+│  │  (UC-33) Hủy suất chiếu                                    │    │
+│  │  (UC-34) Cấu hình giá vé                                   │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                    Reporting                                 │    │
+│  │                                                              │    │
+│  │  (UC-35) Xem báo cáo doanh thu                             │    │
+│  │  (UC-36) Xem báo cáo đặt vé                                │    │
+│  │  (UC-37) Xem thống kê phim                                 │    │
+│  │  (UC-38) Xuất báo cáo                                      │    │
+│  └──────────────────────────────────────────────────────────────┘    │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+                            │
+                          Admin
+                         (Actor)
+```
+
+### 3.2.2 Chi tiết Use Case chính
+
+Phần này mô tả chi tiết các use case quan trọng nhất của hệ thống, tập trung vào luồng đặt vé và các nghiệp vụ phức tạp.
+
+---
+
+#### UC-14: Chọn ghế
+
+**Actor chính:** Customer
+
+**Mục tiêu:** Khách hàng chọn ghế ngồi cho suất chiếu đã chọn
+
+**Điều kiện tiên quyết:**
+- Customer đã đăng nhập
+- Customer đã chọn suất chiếu (UC-12)
+- Hệ thống đã hiển thị sơ đồ ghế (UC-13)
+
+**Luồng chính:**
+1. Customer xem sơ đồ ghế với các trạng thái:
+   - Ghế trống (màu xám): Có thể chọn
+   - Ghế đang chọn (màu vàng): Customer đang chọn
+   - Ghế đã được người khác lock (màu cam): Không thể chọn
+   - Ghế đã bán (màu đỏ): Không thể chọn
+2. Customer click chọn ghế trống
+3. Hệ thống validate:
+   - Ghế thuộc suất chiếu này
+   - Ghế chưa bị lock hoặc đã bán
+   - Tổng số ghế đang chọn ≤ 10
+4. Hệ thống gọi Redis distributed lock:
+   ```
+   SET seat:lock:{showId}:{seatId} {userId} NX EX 300
+   ```
+5. Nếu lock thành công:
+   - Hệ thống cập nhật database: seat_status = 'LOCKED'
+   - Hệ thống cập nhật UI: Ghế chuyển sang màu vàng
+   - Hệ thống tính tổng tiền và hiển thị
+6. Customer có thể tiếp tục chọn thêm ghế khác (quay lại bước 2)
+7. Customer click "Tiếp tục thanh toán"
+8. Hệ thống chuyển sang màn hình thanh toán (UC-15)
+
+**Luồng thay thế 4a: Ghế đã bị lock bởi người khác**
+- 4a1. Redis trả về NIL (SET với NX thất bại)
+- 4a2. Hệ thống hiển thị thông báo: "Ghế này vừa được người khác chọn, vui lòng chọn ghế khác"
+- 4a3. Hệ thống refresh sơ đồ ghế (có thể dùng WebSocket để real-time update)
+- 4a4. Quay lại bước 1
+
+**Luồng thay thế 3a: Vượt quá giới hạn 10 ghế**
+- 3a1. Hệ thống hiển thị thông báo: "Bạn chỉ có thể chọn tối đa 10 ghế"
+- 3a2. Không cho phép chọn thêm
+- 3a3. Quay lại bước 6
+
+**Luồng ngoại lệ 5a: Lỗi kết nối Redis**
+- 5a1. Hệ thống log error
+- 5a2. Hệ thống hiển thị: "Hệ thống đang bận, vui lòng thử lại"
+- 5a3. Quay lại bước 1
+
+**Điều kiện sau khi thực hiện:**
+- Ghế được lock trong Redis với TTL = 300 giây
+- Database ghi nhận trạng thái LOCKED
+- Customer thấy ghế đã chọn và tổng tiền
+
+**Yêu cầu phi chức năng:**
+- Thời gian phản hồi lock ghế < 500ms
+- Đảm bảo không có race condition (2 người cùng lock 1 ghế)
+- UI phải responsive, hiển thị trạng thái real-time
+
+**Mối quan hệ:**
+- **Include:** UC-13 (Xem sơ đồ ghế) - Bắt buộc xem sơ đồ trước khi chọn
+- **Extend:** Bỏ chọn ghế - Customer có thể hủy chọn ghế đã chọn
+
+---
+
+#### UC-15: Thanh toán
+
+**Actor chính:** Customer
+**Actor phụ:** Payment Gateway (VNPay, Momo)
+
+**Mục tiêu:** Khách hàng thanh toán tiền vé đã chọn
+
+**Điều kiện tiên quyết:**
+- Customer đã đăng nhập
+- Customer đã chọn ít nhất 1 ghế (UC-14)
+- Ghế đang được lock trong Redis
+- Lock chưa hết hạn (còn < 300 giây)
+
+**Luồng chính:**
+1. Hệ thống hiển thị trang thanh toán với:
+   - Thông tin suất chiếu (phim, rạp, phòng, giờ chiếu)
+   - Danh sách ghế đã chọn
+   - Tổng tiền
+   - Điểm tích lũy có thể sử dụng (nếu có)
+   - Các phương thức thanh toán: VNPay, Momo
+2. Customer chọn sử dụng điểm (optional):
+   - Nhập số điểm muốn dùng
+   - Hệ thống validate: điểm có sẵn ≥ điểm sử dụng
+   - Hệ thống tính lại: Tổng tiền = Tổng tiền - (Điểm × 1000 VND)
+3. Customer chọn phương thức thanh toán (VNPay hoặc Momo)
+4. Customer click "Thanh toán"
+5. Hệ thống tạo booking record với status = 'PENDING':
+   ```sql
+   INSERT INTO bookings (user_id, show_id, total_amount, status, created_at)
+   VALUES (?, ?, ?, 'PENDING', NOW())
+   ```
+6. Hệ thống tạo booking_seats:
+   ```sql
+   INSERT INTO booking_seats (booking_id, seat_id, price)
+   VALUES (?, ?, ?)
+   ```
+7. Hệ thống gọi Payment Gateway API:
+   - Tạo payment request với:
+     - Amount: Tổng tiền
+     - OrderId: booking_id
+     - ReturnUrl: https://domain.com/payment/callback
+     - IpnUrl: https://domain.com/payment/ipn
+   - Nhận payment URL từ Gateway
+8. Hệ thống redirect Customer đến payment URL
+9. Customer nhập thông tin thanh toán trên trang Gateway
+10. Payment Gateway xử lý giao dịch
+11. Payment Gateway redirect Customer về ReturnUrl với kết quả
+12. Payment Gateway gửi IPN (Instant Payment Notification) đến IpnUrl
+13. Hệ thống nhận IPN callback:
+    - Validate digital signature
+    - Kiểm tra OrderId và Amount
+14. Nếu thanh toán thành công:
+    - Cập nhật booking: status = 'CONFIRMED', paid_at = NOW()
+    - Cập nhật seats: status = 'SOLD'
+    - Xóa Redis lock: DEL seat:lock:{showId}:{seatId}
+    - Cộng điểm tích lũy: points += total_amount / 1000
+    - Trừ điểm đã sử dụng: points -= points_used
+    - Tạo QR code cho vé
+    - Gửi email vé điện tử (UC-17)
+15. Hệ thống hiển thị trang xác nhận đặt vé thành công
+16. Customer nhận email vé điện tử
+
+**Luồng thay thế 14a: Thanh toán thất bại**
+- 14a1. Payment Gateway trả về lỗi (insufficient fund, timeout, cancelled)
+- 14a2. Hệ thống cập nhật booking: status = 'FAILED'
+- 14a3. Hệ thống giữ nguyên Redis lock (cho Customer thử lại)
+- 14a4. Hệ thống hiển thị: "Thanh toán thất bại, vui lòng thử lại"
+- 14a5. Customer có thể thử thanh toán lại hoặc hủy
+
+**Luồng ngoại lệ 13a: Callback không hợp lệ**
+- 13a1. Digital signature không khớp
+- 13a2. Hệ thống log cảnh báo: Possible attack
+- 13a3. Hệ thống bỏ qua callback
+- 13a4. Booking vẫn ở trạng thái PENDING
+- 13a5. Scheduler sẽ tự động hủy sau 15 phút
+
+**Luồng ngoại lệ 6a: Lock timeout (Customer thanh toán quá 5 phút)**
+- 6a1. Redis lock đã hết hạn, ghế đã được giải phóng
+- 6a2. Hệ thống kiểm tra Redis: GET seat:lock:{showId}:{seatId} trả về NIL
+- 6a3. Hệ thống hiển thị: "Hết thời gian giữ ghế, vui lòng chọn lại"
+- 6a4. Hệ thống hủy booking: status = 'CANCELLED'
+- 6a5. Redirect Customer về trang chọn ghế
+
+**Điều kiện sau khi thực hiện:**
+- Booking status = 'CONFIRMED'
+- Seats status = 'SOLD'
+- Redis lock đã được xóa
+- Customer points được cập nhật
+- Email vé điện tử đã được gửi
+
+**Yêu cầu phi chức năng:**
+- Thời gian tạo payment request < 2 giây
+- IPN callback phải được xử lý trong < 5 giây (theo yêu cầu của Gateway)
+- Đảm bảo idempotent: Nếu nhận duplicate IPN, không xử lý lại
+- Transaction ACID: Nếu 1 bước thất bại, rollback toàn bộ
+
+**Mối quan hệ:**
+- **Include:** UC-14 (Chọn ghế) - Phải chọn ghế trước
+- **Extend:** UC-21 (Sử dụng điểm) - Optional
+- **Extend:** UC-17 (Nhận vé điện tử) - Tự động sau khi thanh toán thành công
+
+---
+
+#### UC-20: Hủy vé
+
+**Actor chính:** Customer
+
+**Mục tiêu:** Khách hàng hủy vé đã đặt và nhận lại tiền
+
+**Điều kiện tiên quyết:**
+- Customer đã đăng nhập
+- Customer có booking với status = 'CONFIRMED'
+- Thời gian hiện tại < (Giờ chiếu - 1 giờ)
+
+**Luồng chính:**
+1. Customer vào trang "Lịch sử đặt vé" (UC-18)
+2. Hệ thống hiển thị danh sách bookings với status = 'CONFIRMED'
+3. Customer chọn booking muốn hủy
+4. Hệ thống hiển thị chi tiết booking và button "Hủy vé"
+5. Customer click "Hủy vé"
+6. Hệ thống hiển thị popup xác nhận:
+   - "Bạn có chắc muốn hủy vé này?"
+   - "Tiền sẽ được hoàn lại trong 3-5 ngày làm việc"
+   - Button: "Xác nhận hủy" và "Quay lại"
+7. Customer click "Xác nhận hủy"
+8. Hệ thống validate:
+   - show_time - NOW() > 1 giờ
+   - booking.status = 'CONFIRMED'
+9. Hệ thống bắt đầu transaction:
+   - Cập nhật booking: status = 'CANCELLED', cancelled_at = NOW()
+   - Cập nhật seats: status = 'AVAILABLE'
+   - Trừ điểm đã tích lũy: points -= (total_amount / 1000)
+   - Hoàn điểm đã sử dụng: points += points_used
+   - Tạo refund request gửi Payment Gateway
+10. Payment Gateway xử lý hoàn tiền
+11. Hệ thống gửi email thông báo hủy vé
+12. Hệ thống hiển thị: "Hủy vé thành công. Tiền sẽ được hoàn trong 3-5 ngày."
+
+**Luồng thay thế 8a: Quá hạn hủy vé**
+- 8a1. Thời gian còn lại < 1 giờ
+- 8a2. Hệ thống không hiển thị button "Hủy vé"
+- 8a3. Hệ thống hiển thị: "Không thể hủy vé trong vòng 1 giờ trước giờ chiếu"
+- 8a4. Use case kết thúc
+
+**Luồng ngoại lệ 10a: Payment Gateway lỗi**
+- 10a1. Gateway trả về lỗi hoặc timeout
+- 10a2. Hệ thống rollback transaction
+- 10a3. Booking vẫn giữ status = 'CONFIRMED'
+- 10a4. Hệ thống hiển thị: "Hệ thống đang bận, vui lòng thử lại sau"
+- 10a5. Hệ thống tạo log để admin xử lý thủ công
+
+**Điều kiện sau khi thực hiện:**
+- Booking status = 'CANCELLED'
+- Seats status = 'AVAILABLE'
+- Customer points được điều chỉnh
+- Refund request đã được tạo
+
+**Yêu cầu phi chức năng:**
+- Thời gian xử lý hủy vé < 3 giây
+- Transaction phải atomic: Tất cả thành công hoặc tất cả thất bại
+- Email thông báo được gửi trong vòng 1 phút
+
+**Mối quan hệ:**
+- **Include:** UC-18 (Xem lịch sử đặt vé)
+- **Extend:** UC-19 (Xem chi tiết booking)
+
+---
+
+#### UC-31: Tạo suất chiếu
+
+**Actor chính:** Admin
+
+**Mục tiêu:** Admin tạo lịch chiếu mới cho phim
+
+**Điều kiện tiên quyết:**
+- Admin đã đăng nhập với role = 'ADMIN'
+- Hệ thống đã có dữ liệu Movie và Hall
+
+**Luồng chính:**
+1. Admin vào trang "Quản lý suất chiếu"
+2. Admin click "Tạo suất chiếu mới"
+3. Hệ thống hiển thị form với các trường:
+   - Chọn phim (dropdown)
+   - Chọn rạp (dropdown)
+   - Chọn phòng chiếu (dropdown, filtered by rạp)
+   - Chọn ngày chiếu (date picker)
+   - Chọn giờ chiếu (time picker)
+   - Giá vé cơ bản (input number)
+   - Các loại ghế và giá (VIP, Premium, Normal)
+4. Admin nhập thông tin và click "Kiểm tra xung đột"
+5. Hệ thống validate:
+   - show_date ≥ TODAY
+   - show_time trong giờ hoạt động của rạp (6:00 - 24:00)
+   - Kiểm tra xung đột lịch chiếu trong cùng phòng:
+     ```sql
+     SELECT * FROM shows
+     WHERE hall_id = ?
+     AND show_date = ?
+     AND (
+       (show_time BETWEEN ? AND ?) OR
+       (show_time + movie.duration + 30 BETWEEN ? AND ?)
+     )
+     ```
+     (30 phút là thời gian dọn dẹp phòng)
+6. Nếu không có xung đột:
+   - Hệ thống hiển thị: "Không có xung đột, bạn có thể tạo suất chiếu"
+7. Admin click "Tạo suất chiếu"
+8. Hệ thống bắt đầu transaction:
+   - INSERT INTO shows (movie_id, hall_id, show_date, show_time, base_price)
+   - Lấy show_id vừa tạo
+   - Tạo show_seats cho tất cả ghế trong hall:
+     ```sql
+     INSERT INTO show_seats (show_id, seat_id, price, status)
+     SELECT ?, seat_id,
+            CASE
+              WHEN seat_type = 'VIP' THEN base_price * 1.5
+              WHEN seat_type = 'PREMIUM' THEN base_price * 1.2
+              ELSE base_price
+            END,
+            'AVAILABLE'
+     FROM seats
+     WHERE hall_id = ?
+     ```
+9. Hệ thống commit transaction
+10. Hệ thống hiển thị: "Tạo suất chiếu thành công"
+11. Hệ thống redirect về danh sách suất chiếu
+
+**Luồng thay thế 6a: Có xung đột lịch chiếu**
+- 6a1. Query ở bước 5 trả về kết quả (có xung đột)
+- 6a2. Hệ thống hiển thị:
+  - "Phòng chiếu đã có lịch vào khung giờ này"
+  - Thông tin suất chiếu bị xung đột (phim, giờ chiếu)
+  - Gợi ý: "Vui lòng chọn giờ khác hoặc phòng khác"
+- 6a3. Admin điều chỉnh thông tin
+- 6a4. Quay lại bước 4
+
+**Luồng thay thế 5a: Dữ liệu không hợp lệ**
+- 5a1. show_date < TODAY hoặc show_time ngoài giờ hoạt động
+- 5a2. Hệ thống hiển thị lỗi validation cụ thể
+- 5a3. Quay lại bước 4
+
+**Luồng ngoại lệ 9a: Lỗi database**
+- 9a1. INSERT thất bại (constraint violation, connection error)
+- 9a2. Hệ thống rollback transaction
+- 9a3. Hệ thống hiển thị: "Lỗi hệ thống, vui lòng thử lại"
+- 9a4. Hệ thống log error để debug
+
+**Điều kiện sau khi thực hiện:**
+- Show record được tạo trong database
+- Tất cả show_seats được tạo với status = 'AVAILABLE'
+- Lịch chiếu hiển thị trên website cho Customer
+
+**Yêu cầu phi chức năng:**
+- Thời gian kiểm tra xung đột < 1 giây
+- Thời gian tạo suất chiếu (bao gồm tạo hàng trăm show_seats) < 3 giây
+- UI phải hiển thị rõ ràng thông tin xung đột
+
+**Mối quan hệ:**
+- **Include:** Kiểm tra xung đột lịch chiếu
+- **Extend:** UC-34 (Cấu hình giá vé nâng cao) - Admin có thể set giá custom
+
+---
+
+## 3.3 Biểu đồ hoạt động (Activity Diagram)
+
+Activity Diagram mô tả luồng xử lý của các nghiệp vụ, tập trung vào các quyết định, điều kiện, và các hoạt động song song.
+
+### 3.3.1 Activity Diagram: Quy trình đặt vé hoàn chỉnh
+
+```
+    ┌──────────────────────┐
+    │   Customer Login     │
+    └──────────┬───────────┘
+               │
+    ┌──────────▼───────────┐
+    │  Tìm kiếm phim &     │
+    │  Xem thông tin       │
+    └──────────┬───────────┘
+               │
+    ┌──────────▼───────────┐
+    │  Chọn suất chiếu     │
+    └──────────┬───────────┘
+               │
+    ┌──────────▼───────────┐
+    │  Xem sơ đồ ghế       │
+    └──────────┬───────────┘
+               │
+         ╔═════▼═════╗
+         ║  Chọn ghế ║ ◄──────────┐
+         ╚═════╤═════╝            │
+               │                  │
+    ┌──────────▼───────────┐     │
+    │  Try Redis lock      │     │
+    │  SET NX EX 300       │     │
+    └──────────┬───────────┘     │
+               │                  │
+            ╱     ╲               │
+      Lock  ┤       ├  Lock       │
+     thành  │       │  thất       │
+      công? │       │  bại?       │
+            ╲     ╱               │
+             └──┬──┘               │
+        Thành   │   Thất bại      │
+        công    │                 │
+                │        ┌────────┴────────┐
+    ┌───────────▼─────┐  │  Ghế đã bị lock  │
+    │ Update DB:      │  │  Hiển thị lỗi    │
+    │ status=LOCKED   │  └─────────┬────────┘
+    └───────────┬─────┘            │
+                │                  │
+    ┌───────────▼─────┐            │
+    │ Tính tổng tiền  │            │
+    └───────────┬─────┘            │
+                │                  │
+            ╱       ╲              │
+           ┤ Chọn    ├             │
+           │  thêm   │             │
+           │  ghế?   │             │
+            ╲       ╱              │
+             └──┬───┘               │
+         Có     │    Không          │
+                │                   │
+        ────────┘                   │
+                                    │
+    ┌───────────────────┐           │
+    │ Click "Thanh toán"│           │
+    └──────────┬────────┘           │
+               │                    │
+    ┌──────────▼────────┐           │
+    │ Validate lock còn │           │
+    │ hiệu lực? (< 300s)│           │
+    └──────────┬────────┘           │
+               │                    │
+            ╱     ╲                 │
+           ┤ Valid? ├               │
+            ╲     ╱                 │
+             └──┬──┘                 │
+        Valid   │   Timeout         │
+                │                   │
+                │      ┌────────────┴──────┐
+    ┌───────────▼────┐ │  Lock timeout     │
+    │ Tạo Booking:   │ │  Hủy booking      │
+    │ status=PENDING │ └──────────┬────────┘
+    └───────────┬────┘            │
+                │                 │
+    ┌───────────▼────┐            │
+    │ Tạo payment    │            │
+    │ request với    │            │
+    │ Payment Gateway│            │
+    └───────────┬────┘            │
+                │                 │
+    ┌───────────▼────┐            │
+    │ Redirect to    │            │
+    │ Gateway URL    │            │
+    └───────────┬────┘            │
+                │                 │
+    ┌───────────▼────────────┐    │
+    │ Customer nhập thông    │    │
+    │ tin thanh toán trên    │    │
+    │ trang Payment Gateway  │    │
+    └───────────┬────────────┘    │
+                │                 │
+    ┌───────────▼────────────┐    │
+    │ Gateway xử lý giao     │    │
+    │ dịch (charge card)     │    │
+    └───────────┬────────────┘    │
+                │                 │
+            ╱       ╲              │
+           ┤ Thanh   ├             │
+           │  toán   │             │
+           │ thành   │             │
+           │  công?  │             │
+            ╲       ╱              │
+             └──┬───┘               │
+       Thành    │    Thất bại      │
+       công     │                  │
+                │                  │
+    ┌───────────▼───────┐  ┌───────▼────────┐
+    │ Gateway gửi IPN   │  │ Gateway gửi    │
+    │ callback về hệ    │  │ IPN thất bại   │
+    │ thống             │  └───────┬────────┘
+    └───────────┬───────┘          │
+                │                  │
+    ┌───────────▼───────┐  ┌───────▼────────┐
+    │ Validate          │  │ Update booking:│
+    │ signature & data  │  │ status=FAILED  │
+    └───────────┬───────┘  └───────┬────────┘
+                │                  │
+    ┌───────────▼──────────────────▼────────┐
+    │ ║ PARALLEL: Execute trong transaction║│
+    │ ╠════════════════════════════╦════════╣│
+    │ ║                            ║        ║│
+    │ ║ ┌────────────────────┐     ║ ┌──────▼─────┐
+    │ ║ │ Update booking:    │     ║ │ Delete     │
+    │ ║ │ status=CONFIRMED   │     ║ │ Redis lock │
+    │ ║ │ paid_at=NOW()      │     ║ │            │
+    │ ║ └────────┬───────────┘     ║ └──────┬─────┘
+    │ ║          │                 ║        │
+    │ ║ ┌────────▼───────────┐     ║ ┌──────▼─────┐
+    │ ║ │ Update seats:      │     ║ │ Cộng điểm  │
+    │ ║ │ status=SOLD        │     ║ │ tích lũy   │
+    │ ║ └────────────────────┘     ║ └────────────┘
+    │ ╚════════════════════════════╩════════════════╝
+    └───────────────────┬───────────────────────────┘
+                        │
+    ┌───────────────────▼────────┐
+    │  ║ PARALLEL: Async tasks ║ │
+    │  ╠═══════════╦═════════════╣│
+    │  ║           ║             ║│
+    │  ║  ┌────────▼───────┐    ║ ┌──────▼─────────┐
+    │  ║  │ Generate QR    │    ║ │ Send email vé  │
+    │  ║  │ code cho vé    │    ║ │ điện tử        │
+    │  ║  └────────────────┘    ║ └────────────────┘
+    │  ╚════════════════════════╩════════════════════╝
+    └───────────────────┬────────────────────────────┘
+                        │
+    ┌───────────────────▼────────┐
+    │ Redirect Customer về       │
+    │ trang "Đặt vé thành công"  │
+    └───────────────────┬────────┘
+                        │
+    ┌───────────────────▼────────┐
+    │  Customer nhận email và    │
+    │  xem vé điện tử            │
+    └────────────────────────────┘
+                        │
+                        ▼
+                      (End)
+```
+
+### 3.3.2 Activity Diagram: Xử lý timeout ghế lock
+
+```
+    ┌────────────────────────────┐
+    │  Scheduler chạy mỗi phút   │
+    │  (Cron: 0 * * * * *)       │
+    └─────────────┬──────────────┘
+                  │
+    ┌─────────────▼──────────────┐
+    │  Query bookings:           │
+    │  status = 'PENDING' AND    │
+    │  created_at < NOW() - 5min │
+    └─────────────┬──────────────┘
+                  │
+               ╱     ╲
+              ┤ Có    ├
+              │ booking│
+              │ nào?  │
+               ╲     ╱
+                └──┬──┘
+           Có      │      Không
+                   │
+                   │    ┌─────────────┐
+                   │    │  End (skip) │
+                   │    └─────────────┘
+                   │
+    ┌──────────────▼────────────┐
+    │ For each timeout booking  │
+    └──────────────┬────────────┘
+                   │
+    ┌──────────────▼────────────┐
+    │  Start transaction        │
+    └──────────────┬────────────┘
+                   │
+    ┌──────────────▼────────────┐
+    │ Update booking:           │
+    │ status = 'CANCELLED'      │
+    └──────────────┬────────────┘
+                   │
+    ┌──────────────▼────────────┐
+    │ Get list of seats         │
+    │ from booking_seats        │
+    └──────────────┬────────────┘
+                   │
+    ┌──────────────▼────────────┐
+    │ For each seat:            │
+    │ Update status=AVAILABLE   │
+    └──────────────┬────────────┘
+                   │
+    ┌──────────────▼────────────┐
+    │ For each seat:            │
+    │ DEL Redis key             │
+    │ seat:lock:{show}:{seat}   │
+    └──────────────┬────────────┘
+                   │
+               ╱       ╲
+              ┤ Redis   ├
+              │ success?│
+               ╲       ╱
+                └──┬───┘
+           Success  │   Fail
+                    │
+                    │    ┌────────────────┐
+    ┌───────────────▼──┐ │  Log warning   │
+    │ Commit transaction│ │  Continue      │
+    └───────────────┬──┘ └────────┬───────┘
+                    │             │
+    ┌───────────────▼─────────────▼──┐
+    │  Log info: Released N seats    │
+    └────────────────────────────────┘
+                    │
+                    ▼
+                  (End)
+```
+
+### 3.3.3 Activity Diagram: Admin tạo suất chiếu
+
+```
+    ┌────────────────────────────┐
+    │  Admin login               │
+    └─────────────┬──────────────┘
+                  │
+    ┌─────────────▼──────────────┐
+    │  Vào trang "Quản lý suất   │
+    │  chiếu"                    │
+    └─────────────┬──────────────┘
+                  │
+    ┌─────────────▼──────────────┐
+    │  Click "Tạo suất chiếu"    │
+    └─────────────┬──────────────┘
+                  │
+    ┌─────────────▼──────────────┐
+    │  Hiển thị form:            │
+    │  - Chọn phim               │
+    │  - Chọn rạp                │
+    │  - Chọn phòng chiếu        │
+    │  - Ngày giờ chiếu          │
+    │  - Giá vé                  │
+    └─────────────┬──────────────┘
+                  │
+    ┌─────────────▼──────────────┐
+    │  Admin nhập thông tin      │
+    └─────────────┬──────────────┘
+                  │
+    ┌─────────────▼──────────────┐
+    │  Click "Kiểm tra xung đột" │
+    └─────────────┬──────────────┘
+                  │
+    ┌─────────────▼──────────────┐
+    │  Validate:                 │
+    │  - show_date >= TODAY      │
+    │  - show_time hợp lệ        │
+    └─────────────┬──────────────┘
+                  │
+               ╱     ╲
+              ┤ Valid? ├
+               ╲     ╱
+                └──┬──┘
+           Valid   │   Invalid
+                   │
+                   │    ┌─────────────────┐
+                   │    │ Hiển thị lỗi    │
+                   │    │ validation      │
+                   │    └────────┬────────┘
+                   │             │
+                   │             └──────┐
+                   │                    │
+    ┌──────────────▼────────────┐       │
+    │  Query check xung đột:    │       │
+    │  SELECT * FROM shows      │       │
+    │  WHERE hall_id = ?        │       │
+    │  AND show_date = ?        │       │
+    │  AND time overlap         │       │
+    └──────────────┬────────────┘       │
+                   │                    │
+               ╱       ╲                │
+              ┤ Có xung ├               │
+              │  đột?   │               │
+               ╲       ╱                │
+                └──┬───┘                 │
+           Không   │   Có               │
+                   │                    │
+                   │    ┌───────────────▼──────┐
+                   │    │ Hiển thị thông tin   │
+                   │    │ suất chiếu xung đột  │
+                   │    │ Gợi ý đổi giờ/phòng  │
+                   │    └───────────┬──────────┘
+                   │                │
+                   │                └──────────┤
+                   │                           │
+    ┌──────────────▼────────────┐              │
+    │ Hiển thị: "Không xung đột │              │
+    │ Có thể tạo suất chiếu"    │              │
+    └──────────────┬────────────┘              │
+                   │                           │
+    ┌──────────────▼────────────┐              │
+    │  Admin click "Tạo suất    │              │
+    │  chiếu"                   │              │
+    └──────────────┬────────────┘              │
+                   │                           │
+    ┌──────────────▼────────────┐              │
+    │  Start transaction        │              │
+    └──────────────┬────────────┘              │
+                   │                           │
+    ┌──────────────▼────────────┐              │
+    │  INSERT INTO shows        │              │
+    └──────────────┬────────────┘              │
+                   │                           │
+    ┌──────────────▼────────────┐              │
+    │  Get show_id              │              │
+    └──────────────┬────────────┘              │
+                   │                           │
+    ┌──────────────▼────────────┐              │
+    │  Query all seats in hall  │              │
+    └──────────────┬────────────┘              │
+                   │                           │
+    ┌──────────────▼────────────┐              │
+    │  For each seat:           │              │
+    │  - Calculate price by type│              │
+    │  - INSERT show_seats      │              │
+    │    (status=AVAILABLE)     │              │
+    └──────────────┬────────────┘              │
+                   │                           │
+               ╱       ╲                       │
+              ┤ Insert  ├                      │
+              │success? │                      │
+               ╲       ╱                       │
+                └──┬───┘                        │
+           Success  │   Fail                   │
+                    │                          │
+                    │    ┌──────────────────┐  │
+    ┌───────────────▼──┐ │  Rollback        │  │
+    │ Commit transaction│ │  Show error      │  │
+    └───────────────┬──┘ └────────┬─────────┘  │
+                    │             │            │
+                    │             └─────────────┤
+                    │                           │
+    ┌───────────────▼──────────────┐            │
+    │ Hiển thị: "Tạo suất chiếu   │            │
+    │ thành công"                  │            │
+    └───────────────┬──────────────┘            │
+                    │                           │
+    ┌───────────────▼──────────────┐            │
+    │ Redirect về danh sách suất   │            │
+    │ chiếu                        │            │
+    └──────────────────────────────┘            │
+                    │                           │
+                    ▼                           │
+                  (End)                         │
+                                                │
+                        ◄───────────────────────┘
+```
+
+---
+
+## 3.4 Biểu đồ tuần tự (Sequence Diagram)
+
+Sequence Diagram mô tả chi tiết trình tự tương tác giữa các đối tượng/thành phần trong hệ thống theo trục thời gian.
+
+### 3.4.1 Sequence Diagram: Chọn ghế (Xử lý concurrency)
+
+```
+ Customer     Browser      Backend       Redis       Database      Other User
+    │             │            │           │             │              │
+    │  Click      │            │           │             │              │
+    │  seat A1    │            │           │             │              │
+    │────────────>│            │           │             │              │
+    │             │            │           │             │              │
+    │             │ POST /api/ │           │             │              │
+    │             │ bookings/  │           │             │              │
+    │             │ seats/lock │           │             │              │
+    │             │───────────>│           │             │              │
+    │             │            │           │             │              │
+    │             │            │ SET seat: │             │              │
+    │             │            │ lock:123: │             │              │
+    │             │            │ A1 userId │             │              │
+    │             │            │ NX EX 300 │             │              │
+    │             │            │──────────>│             │              │
+    │             │            │           │             │              │
+    │             │            │   OK      │             │              │
+    │             │            │<──────────│             │              │
+    │             │            │           │             │              │
+    │             │            │ UPDATE show_seats      │              │
+    │             │            │ SET status='LOCKED'    │              │
+    │             │            │ WHERE show_id=123      │              │
+    │             │            │ AND seat_id='A1'       │              │
+    │             │            │────────────────────────>│              │
+    │             │            │           │             │              │
+    │             │            │   1 row updated         │              │
+    │             │            │<────────────────────────│              │
+    │             │            │           │             │              │
+    │             │  200 OK    │           │             │              │
+    │             │  {success: │           │             │              │
+    │             │   true}    │           │             │              │
+    │             │<───────────│           │             │              │
+    │             │            │           │             │              │
+    │  Update UI  │            │           │             │              │
+    │  (A1 yellow)│            │           │             │              │
+    │<────────────│            │           │             │              │
+    │             │            │           │             │              │
+    │             │            │           │             │   Other user │
+    │             │            │           │             │   clicks A1  │
+    │             │            │           │             │   at same    │
+    │             │            │           │             │   time       │
+    │             │            │           │             │<─────────────│
+    │             │            │           │             │              │
+    │             │            │     POST /api/bookings/ │              │
+    │             │            │     seats/lock          │              │
+    │             │            │<────────────────────────────────────────│
+    │             │            │           │             │              │
+    │             │            │ SET seat:lock:123:A1   │              │
+    │             │            │ otherUserId NX EX 300  │              │
+    │             │            │──────────>│             │              │
+    │             │            │           │             │              │
+    │             │            │   NIL     │             │              │
+    │             │            │   (Key đã │             │              │
+    │             │            │   tồn tại)│             │              │
+    │             │            │<──────────│             │              │
+    │             │            │           │             │              │
+    │             │  409       │           │             │              │
+    │             │  Conflict  │           │             │              │
+    │             │  "Ghế đã   │           │             │              │
+    │             │  được chọn"│           │             │              │
+    │             │────────────────────────────────────────────────────>│
+    │             │            │           │             │              │
+    │             │            │           │             │    Update UI │
+    │             │            │           │             │    (A1 red)  │
+    │             │            │           │             │    Show error│
+    │             │            │           │             │<─────────────│
+    │             │            │           │             │              │
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 5 minutes pass ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+    │             │            │           │             │              │
+    │             │            │   Scheduler Job         │              │
+    │             │            │   runs every minute     │              │
+    │             │            │           │             │              │
+    │             │            │   DEL seat:lock:123:A1  │              │
+    │             │            │   (TTL expired, auto    │              │
+    │             │            │   deleted by Redis)     │              │
+    │             │            │           │             │              │
+    │             │            │   Query timeout bookings│              │
+    │             │            │   (created_at < NOW-5min)              │
+    │             │            │────────────────────────>│              │
+    │             │            │           │             │              │
+    │             │            │   UPDATE show_seats     │              │
+    │             │            │   SET status='AVAILABLE'│              │
+    │             │            │────────────────────────>│              │
+    │             │            │           │             │              │
+```
+
+**Giải thích:**
+1. Customer 1 click chọn ghế A1
+2. Backend thử SET Redis key với NX (chỉ set nếu key chưa tồn tại)
+3. Redis trả về OK → Lock thành công
+4. Backend update database: status = 'LOCKED'
+5. UI cập nhật màu vàng (đang chọn)
+6. Other User cũng click ghế A1 gần như cùng lúc
+7. Backend thử SET Redis key nhưng trả về NIL (key đã tồn tại)
+8. Backend trả về 409 Conflict
+9. Other User thấy lỗi "Ghế đã được chọn"
+10. Sau 5 phút, Redis tự động xóa key (TTL = 300)
+11. Scheduler job cập nhật database: status = 'AVAILABLE'
+
+**Race condition được xử lý:**
+- Redis SET NX là atomic operation
+- Chỉ 1 trong 2 requests đồng thời sẽ lock thành công
+- Không có tình trạng 2 người cùng lock 1 ghế
+
+### 3.4.2 Sequence Diagram: Thanh toán với Payment Gateway
+
+```
+Customer    Browser     Backend      Redis    Database   Payment    Email
+                                                          Gateway   Service
+   │           │           │           │          │         │         │
+   │ Click     │           │           │          │         │         │
+   │"Thanh toán│           │           │          │         │         │
+   │───────────>│          │           │          │         │         │
+   │           │           │           │          │         │         │
+   │           │ POST /api/│           │          │         │         │
+   │           │ bookings/ │           │          │         │         │
+   │           │ checkout  │           │          │         │         │
+   │           │──────────>│           │          │         │         │
+   │           │           │           │          │         │         │
+   │           │           │ Check lock│          │         │         │
+   │           │           │ still valid         │         │         │
+   │           │           │ GET seat: │          │         │         │
+   │           │           │ lock:*    │          │         │         │
+   │           │           │──────────>│          │         │         │
+   │           │           │           │          │         │         │
+   │           │           │   userId  │          │         │         │
+   │           │           │   (valid) │          │         │         │
+   │           │           │<──────────│          │         │         │
+   │           │           │           │          │         │         │
+   │           │           │ START TRANSACTION   │         │         │
+   │           │           │─────────────────────>│         │         │
+   │           │           │           │          │         │         │
+   │           │           │ INSERT INTO bookings│         │         │
+   │           │           │ (status='PENDING')  │         │         │
+   │           │           │─────────────────────>│         │         │
+   │           │           │           │          │         │         │
+   │           │           │   booking_id=999    │         │         │
+   │           │           │<─────────────────────│         │         │
+   │           │           │           │          │         │         │
+   │           │           │ INSERT booking_seats│         │         │
+   │           │           │─────────────────────>│         │         │
+   │           │           │           │          │         │         │
+   │           │           │ COMMIT              │         │         │
+   │           │           │─────────────────────>│         │         │
+   │           │           │           │          │         │         │
+   │           │           │   POST /api/payment/│         │         │
+   │           │           │   create            │         │         │
+   │           │           │   {amount, orderId} │         │         │
+   │           │           │─────────────────────────────>│         │
+   │           │           │           │          │       │         │
+   │           │           │   paymentUrl        │         │         │
+   │           │           │   signature         │         │         │
+   │           │           │<─────────────────────────────│         │
+   │           │           │           │          │       │         │
+   │           │  302       │           │          │       │         │
+   │           │  Redirect  │           │          │       │         │
+   │           │  paymentUrl│           │          │       │         │
+   │           │<──────────│           │          │       │         │
+   │           │           │           │          │       │         │
+   │  Navigate │           │           │          │       │         │
+   │  to Gateway          │           │          │       │         │
+   │───────────────────────────────────────────────────>│         │
+   │           │           │           │          │       │         │
+   │  Enter card info     │           │          │       │         │
+   │  & confirm           │           │          │       │         │
+   │───────────────────────────────────────────────────>│         │
+   │           │           │           │          │       │         │
+   │           │           │           │          │   Process       │
+   │           │           │           │          │   transaction   │
+   │           │           │           │          │   (charge card) │
+   │           │           │           │          │       │         │
+   │           │           │   POST /payment/ipn │       │         │
+   │           │           │   {orderId, status, │       │         │
+   │           │           │    signature}       │       │         │
+   │           │           │<─────────────────────────────│         │
+   │           │           │           │          │       │         │
+   │           │           │ Validate signature  │       │         │
+   │           │           │ (HMAC SHA256)       │       │         │
+   │           │           │           │          │       │         │
+   │           │           │ START TRANSACTION   │       │         │
+   │           │           │─────────────────────>│       │         │
+   │           │           │           │          │       │         │
+   │           │           │ UPDATE bookings     │       │         │
+   │           │           │ SET status='CONFIRMED'      │         │
+   │           │           │ paid_at=NOW()       │       │         │
+   │           │           │─────────────────────>│       │         │
+   │           │           │           │          │       │         │
+   │           │           │ UPDATE show_seats   │       │         │
+   │           │           │ SET status='SOLD'   │       │         │
+   │           │           │─────────────────────>│       │         │
+   │           │           │           │          │       │         │
+   │           │           │ DEL Redis locks     │       │         │
+   │           │           │──────────>│          │       │         │
+   │           │           │           │          │       │         │
+   │           │           │ UPDATE user points  │       │         │
+   │           │           │ points += amount/1000       │         │
+   │           │           │─────────────────────>│       │         │
+   │           │           │           │          │       │         │
+   │           │           │ COMMIT              │       │         │
+   │           │           │─────────────────────>│       │         │
+   │           │           │           │          │       │         │
+   │           │           │ 200 OK              │       │         │
+   │           │           │─────────────────────────────>│         │
+   │           │           │           │          │       │         │
+   │           │           │   Async: Send email │       │         │
+   │           │           │   with e-ticket     │       │         │
+   │           │           │───────────────────────────────────────>│
+   │           │           │           │          │       │         │
+   │           │           │           │          │       │   Send  │
+   │           │           │           │          │       │   email │
+   │           │           │           │          │       │<────────│
+   │           │           │           │          │       │         │
+   │  Gateway redirects   │           │          │       │         │
+   │  customer back       │           │          │       │         │
+   │<─────────────────────────────────────────────────────│         │
+   │           │           │           │          │       │         │
+   │  GET /payment/       │           │          │       │         │
+   │  success?orderId=999 │           │          │       │         │
+   │──────────────────────>│          │          │       │         │
+   │           │           │           │          │       │         │
+   │           │   Query booking      │          │       │         │
+   │           │   by orderId         │          │       │         │
+   │           │───────────────────────────────>│       │         │
+   │           │           │           │          │       │         │
+   │           │   Display success page          │       │         │
+   │           │   with booking details          │       │         │
+   │           │<──────────│           │          │       │         │
+   │           │           │           │          │       │         │
+   │  View     │           │           │          │       │         │
+   │  success  │           │           │          │       │         │
+   │<──────────│           │           │          │       │         │
+   │           │           │           │          │       │         │
+   │                 Check email inbox            │       │         │
+   │──────────────────────────────────────────────────────────────>│
+   │           │           │           │          │       │         │
+   │                 Receive e-ticket email       │       │         │
+   │<──────────────────────────────────────────────────────────────│
+   │           │           │           │          │       │         │
+```
+
+**Điểm quan trọng:**
+1. **IPN (Instant Payment Notification):** Gateway gọi backend ngay khi xử lý xong, không cần chờ customer redirect
+2. **Validate signature:** Dùng HMAC SHA256 để đảm bảo callback từ gateway hợp lệ, không bị giả mạo
+3. **Transaction:** Tất cả update (booking, seats, points) phải trong 1 transaction
+4. **Idempotent:** Nếu gateway gửi duplicate IPN, backend phải kiểm tra và không xử lý lại
+5. **Async email:** Không block luồng chính, gửi email bất đồng bộ
+
+### 3.4.3 Sequence Diagram: Hủy vé và hoàn tiền
+
+```
+Customer    Browser     Backend     Database   Payment    Email
+                                              Gateway   Service
+   │           │           │           │         │         │
+   │  View     │           │           │         │         │
+   │  booking  │           │           │         │         │
+   │  history  │           │           │         │         │
+   │───────────>│          │           │         │         │
+   │           │           │           │         │         │
+   │           │ GET /api/ │           │         │         │
+   │           │ bookings  │           │         │         │
+   │           │──────────>│           │         │         │
+   │           │           │           │         │         │
+   │           │           │ SELECT * FROM       │         │
+   │           │           │ bookings WHERE      │         │
+   │           │           │ user_id=? AND       │         │
+   │           │           │ status='CONFIRMED'  │         │
+   │           │           │─────────────────────>│         │
+   │           │           │           │         │         │
+   │           │           │   List bookings     │         │
+   │           │           │<─────────────────────│         │
+   │           │           │           │         │         │
+   │           │  200 OK   │           │         │         │
+   │           │  bookings │           │         │         │
+   │           │<──────────│           │         │         │
+   │           │           │           │         │         │
+   │  Display  │           │           │         │         │
+   │  bookings │           │           │         │         │
+   │<──────────│           │           │         │         │
+   │           │           │           │         │         │
+   │  Click    │           │           │         │         │
+   │ "Hủy vé"  │           │           │         │         │
+   │───────────>│          │           │         │         │
+   │           │           │           │         │         │
+   │           │ Confirm   │           │         │         │
+   │           │ popup     │           │         │         │
+   │<──────────│           │           │         │         │
+   │           │           │           │         │         │
+   │ Confirm   │           │           │         │         │
+   │───────────>│          │           │         │         │
+   │           │           │           │         │         │
+   │           │ POST /api/│           │         │         │
+   │           │ bookings/ │           │         │         │
+   │           │ {id}/     │           │         │         │
+   │           │ cancel    │           │         │         │
+   │           │──────────>│           │         │         │
+   │           │           │           │         │         │
+   │           │           │ Validate: │         │         │
+   │           │           │ - show_time - NOW() │         │
+   │           │           │   > 1 hour │         │         │
+   │           │           │ - status = │         │         │
+   │           │           │   CONFIRMED│         │         │
+   │           │           │─────────────────────>│         │
+   │           │           │           │         │         │
+   │           │           │   Valid   │         │         │
+   │           │           │<─────────────────────│         │
+   │           │           │           │         │         │
+   │           │           │ START TRANSACTION   │         │
+   │           │           │─────────────────────>│         │
+   │           │           │           │         │         │
+   │           │           │ UPDATE bookings     │         │
+   │           │           │ SET status=         │         │
+   │           │           │ 'CANCELLED'         │         │
+   │           │           │─────────────────────>│         │
+   │           │           │           │         │         │
+   │           │           │ UPDATE show_seats   │         │
+   │           │           │ SET status=         │         │
+   │           │           │ 'AVAILABLE'         │         │
+   │           │           │─────────────────────>│         │
+   │           │           │           │         │         │
+   │           │           │ UPDATE user         │         │
+   │           │           │ points -= earned    │         │
+   │           │           │ points += used      │         │
+   │           │           │─────────────────────>│         │
+   │           │           │           │         │         │
+   │           │           │ COMMIT              │         │
+   │           │           │─────────────────────>│         │
+   │           │           │           │         │         │
+   │           │           │   POST /api/refund  │         │
+   │           │           │   {orderId, amount} │         │
+   │           │           │─────────────────────────────>│
+   │           │           │           │         │         │
+   │           │           │   Refund ID         │         │
+   │           │           │   (processing)      │         │
+   │           │           │<─────────────────────────────│
+   │           │           │           │         │         │
+   │           │           │   Async: Send email │         │
+   │           │           │   notification      │         │
+   │           │           │───────────────────────────────────────>│
+   │           │           │           │         │         │
+   │           │  200 OK   │           │         │         │
+   │           │  "Hủy vé  │           │         │         │
+   │           │  thành    │           │         │         │
+   │           │  công"    │           │         │         │
+   │           │<──────────│           │         │         │
+   │           │           │           │         │         │
+   │  Display  │           │           │         │         │
+   │  success  │           │         │         │         │
+   │<──────────│           │           │         │         │
+   │           │           │           │         │         │
+   │                       │           │         │   Send  │
+   │                       │           │         │   email │
+   │                       │           │         │<────────│
+   │           │           │           │         │         │
+   │  Receive email about refund      │         │         │
+   │<──────────────────────────────────────────────────────────────│
+   │           │           │           │         │         │
+   ─ ─ ─ ─ ─ ─ ─ ─ 3-5 business days later  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+   │           │           │           │         │         │
+   │                       │   POST /payment/ipn │         │
+   │                       │   {refundId,        │         │
+   │                       │    status: success} │         │
+   │                       │<─────────────────────────────│
+   │           │           │           │         │         │
+   │                       │ UPDATE booking      │         │
+   │                       │ refunded_at=NOW()   │         │
+   │                       │─────────────────────>│         │
+   │           │           │           │         │         │
+   │                       │ Send email:         │         │
+   │                       │ "Hoàn tiền          │         │
+   │                       │  thành công"        │         │
+   │                       │───────────────────────────────────────>│
+   │           │           │           │         │         │
+   │  Receive email:      │           │         │         │
+   │  Refund completed    │           │         │         │
+   │<──────────────────────────────────────────────────────────────│
+   │           │           │           │         │         │
+```
+
+---
+
+## 3.5 Biểu đồ trạng thái (State Diagram)
+
+State Diagram mô tả các trạng thái của một đối tượng và các sự kiện dẫn đến chuyển trạng thái.
+
+### 3.5.1 State Diagram: Booking Lifecycle
+
+```
+                            ┌───────────┐
+                            │  [START]  │
+                            └─────┬─────┘
+                                  │
+                        Customer chọn ghế
+                                  │
+                                  ▼
+                         ┌─────────────────┐
+                         │    PENDING      │
+                         │                 │
+                         │ Ghế đã lock,    │
+                         │ chờ thanh toán  │
+                         └────┬───────┬────┘
+                              │       │
+              Payment success │       │ Timeout (5 phút)
+              ────────────────┘       │ hoặc Customer hủy
+                                      │
+                    ┌─────────────────▼────────┐
+                    │                           │
+                    ▼                           ▼
+           ┌─────────────────┐         ┌─────────────────┐
+           │   CONFIRMED     │         │   CANCELLED     │
+           │                 │         │                 │
+           │ Thanh toán      │         │ Booking bị hủy, │
+           │ thành công,     │         │ ghế được giải   │
+           │ vé đã được cấp  │         │ phóng           │
+           └────┬───────┬────┘         └─────────────────┘
+                │       │                       │
+    Customer hủy│       │ Payment failed        │
+    (< 1h trước │       │ (rare)                │
+     giờ chiếu) │       │                       │
+                │       └────────┬──────────────┘
+                │                │
+                │                ▼
+                │       ┌─────────────────┐
+                │       │     FAILED      │
+                │       │                 │
+                │       │ Thanh toán lỗi  │
+                │       │ (có thể retry)  │
+                │       └─────────────────┘
+                │
+                ▼
+        ┌─────────────────┐
+        │   CANCELLED     │
+        │   (Refunded)    │
+        │                 │
+        │ Customer đã hủy │
+        │ sau khi thanh   │
+        │ toán, đang hoàn │
+        │ tiền            │
+        └────────┬────────┘
+                 │
+       Refund complete
+                 │
+                 ▼
+        ┌─────────────────┐
+        │  REFUNDED       │
+        │                 │
+        │ Hoàn tiền       │
+        │ thành công      │
+        └────────┬────────┘
+                 │
+                 ▼
+              [END]
+```
+
+**Chi tiết trạng thái:**
+
+| State | Mô tả | Thời gian tồn tại | Hành động được phép |
+|-------|-------|-------------------|---------------------|
+| PENDING | Booking vừa tạo, chờ thanh toán | < 15 phút | Customer có thể thanh toán hoặc hủy |
+| CONFIRMED | Thanh toán thành công | Đến giờ chiếu + 2h | Customer có thể xem vé, hủy vé (nếu > 1h trước chiếu) |
+| FAILED | Thanh toán thất bại | Vĩnh viễn | Customer có thể thử thanh toán lại booking mới |
+| CANCELLED | Booking bị hủy (timeout hoặc customer hủy trước thanh toán) | Vĩnh viễn | Không có hành động |
+| REFUNDED | Đã hoàn tiền sau khi customer hủy vé | Vĩnh viễn | Không có hành động |
+
+**Các sự kiện chuyển trạng thái:**
+
+1. **Customer chọn ghế** → PENDING
+   - Trigger: POST /api/bookings/seats/lock
+   - Điều kiện: Ghế chưa bị lock, user đã login
+
+2. **Payment success** → CONFIRMED
+   - Trigger: Payment Gateway IPN callback với status = success
+   - Điều kiện: Booking ở trạng thái PENDING
+
+3. **Timeout hoặc Customer hủy** → CANCELLED
+   - Trigger:
+     - Scheduler job (sau 15 phút)
+     - POST /api/bookings/{id}/cancel
+   - Điều kiện: Booking ở trạng thái PENDING
+
+4. **Payment failed** → FAILED
+   - Trigger: Payment Gateway IPN callback với status = failed
+   - Điều kiện: Booking ở trạng thái PENDING
+
+5. **Customer hủy vé** → CANCELLED (Refunded)
+   - Trigger: POST /api/bookings/{id}/cancel
+   - Điều kiện:
+     - Booking ở trạng thái CONFIRMED
+     - show_time - NOW() > 1 giờ
+
+6. **Refund complete** → REFUNDED
+   - Trigger: Payment Gateway refund IPN callback
+   - Điều kiện: Booking ở trạng thái CANCELLED (with refund_id)
+
+### 3.5.2 State Diagram: Seat Lifecycle
+
+```
+                         ┌───────────┐
+                         │  [START]  │
+                         └─────┬─────┘
+                               │
+                    Admin tạo suất chiếu
+                               │
+                               ▼
+                      ┌─────────────────┐
+                      │   AVAILABLE     │
+                      │                 │
+                      │ Ghế trống,      │
+                      │ sẵn sàng đặt    │
+                      └────┬───────┬────┘
+                           │       │
+            Customer chọn  │       │ Admin hủy suất chiếu
+            ───────────────┘       └──────────┐
+                                              │
+                   ┌─────────────────┐        │
+                   │     LOCKED      │        │
+                   │                 │        │
+                   │ Ghế đã được     │        │
+                   │ customer chọn,  │        │
+                   │ chờ thanh toán  │        │
+                   │ (TTL = 5 phút)  │        │
+                   └────┬───────┬────┘        │
+                        │       │             │
+        Payment success │       │ Timeout     │
+        ────────────────┘       │ (5 phút)    │
+                                │ hoặc cancel │
+                                │             │
+                   ┌────────────▼──┐          │
+                   │               │          │
+                   ▼               ▼          │
+          ┌─────────────────┐  ┌──────────────▼──┐
+          │      SOLD       │  │   AVAILABLE     │
+          │                 │  │   (Released)    │
+          │ Đã bán,         │  │                 │
+          │ không thể chọn  │  │ Quay về trạng   │
+          └────┬───────┬────┘  │ thái trống      │
+               │       │        └─────────────────┘
+Customer hủy vé│       │ Giờ chiếu                │
+(< 1h trước    │       │ đã qua                   │
+ giờ chiếu)    │       │                          │
+               │       └───────────┐              │
+               │                   │              │
+               ▼                   ▼              │
+          ┌──────────────┐   ┌─────────────┐     │
+          │  AVAILABLE   │   │   EXPIRED   │     │
+          │  (Refunded)  │   │             │     │
+          │              │   │ Suất chiếu  │     │
+          │ Ghế được giải│   │ đã kết thúc │     │
+          │ phóng, có thể│   └─────────────┘     │
+          │ bán lại      │           │           │
+          └──────────────┘           │           │
+                   │                 │           │
+                   │                 │           │
+                   │                 ▼           │
+                   │            [END]            │
+                   │                             │
+                   └─────────────────────────────┘
+```
+
+**Chi tiết trạng thái Seat:**
+
+| State | Mô tả | Redis TTL | Database status |
+|-------|-------|-----------|-----------------|
+| AVAILABLE | Ghế trống, có thể chọn | N/A | 'AVAILABLE' |
+| LOCKED | Đang được customer giữ, chờ thanh toán | 300s (5 phút) | 'LOCKED' |
+| SOLD | Đã bán, không thể chọn | N/A | 'SOLD' |
+| EXPIRED | Suất chiếu đã qua | N/A | 'SOLD' (không thay đổi) |
+
+**Các sự kiện chuyển trạng thái Seat:**
+
+1. **Admin tạo suất chiếu** → AVAILABLE
+   - Trigger: POST /api/admin/shows
+   - Tạo tất cả show_seats với status = 'AVAILABLE'
+
+2. **Customer chọn ghế** → LOCKED
+   - Trigger: POST /api/bookings/seats/lock
+   - Redis: SET seat:lock:{showId}:{seatId} userId NX EX 300
+   - Database: UPDATE show_seats SET status = 'LOCKED'
+
+3. **Payment success** → SOLD
+   - Trigger: Payment Gateway IPN callback
+   - Redis: DEL seat:lock:{showId}:{seatId}
+   - Database: UPDATE show_seats SET status = 'SOLD'
+
+4. **Timeout (5 phút)** → AVAILABLE
+   - Trigger:
+     - Redis TTL expire (tự động xóa key)
+     - Scheduler job cleanup
+   - Database: UPDATE show_seats SET status = 'AVAILABLE'
+
+5. **Customer hủy vé** → AVAILABLE (Refunded)
+   - Trigger: POST /api/bookings/{id}/cancel
+   - Điều kiện: show_time - NOW() > 1 giờ
+   - Database: UPDATE show_seats SET status = 'AVAILABLE'
+
+6. **Giờ chiếu đã qua** → EXPIRED
+   - Trigger: Scheduler job (chạy sau giờ chiếu + 2h)
+   - Không thay đổi status trong database
+   - Chỉ để đánh dấu logic, không cho phép thao tác
+
+---
+
+## 3.6 Kết luận chương
+
+Chương 3 đã trình bày chi tiết phân tích nhu cầu của hệ thống đặt vé rạp chiếu phim thông qua các mô hình UML:
+
+1. **Actor Analysis:** Đã xác định 6 loại actor chính tương tác với hệ thống, bao gồm Customer, Admin, Staff, Payment Gateway, Email Service, và Scheduler. Mỗi actor có vai trò, mục tiêu, và quyền hạn khác nhau.
+
+2. **Use Case Diagram:** Đã mô hình hóa 38 use case, được nhóm thành 11 module chức năng. Các use case quan trọng nhất (UC-14 Chọn ghế, UC-15 Thanh toán, UC-20 Hủy vé, UC-31 Tạo suất chiếu) đã được mô tả chi tiết với luồng chính, luồng thay thế, và luồng ngoại lệ.
+
+3. **Activity Diagram:** Đã mô tả luồng xử lý của 3 nghiệp vụ phức tạp nhất:
+   - Quy trình đặt vé hoàn chỉnh (từ login đến nhận vé)
+   - Xử lý timeout ghế lock (scheduler job)
+   - Admin tạo suất chiếu với kiểm tra xung đột
+
+4. **Sequence Diagram:** Đã phân tích chi tiết trình tự tương tác giữa các thành phần trong 3 kịch bản:
+   - Chọn ghế với xử lý race condition (Redis distributed lock)
+   - Thanh toán với Payment Gateway (IPN callback, transaction)
+   - Hủy vé và hoàn tiền (refund workflow)
+
+5. **State Diagram:** Đã mô tả vòng đời trạng thái của 2 đối tượng quan trọng nhất:
+   - Booking lifecycle (6 trạng thái: PENDING, CONFIRMED, FAILED, CANCELLED, REFUNDED)
+   - Seat lifecycle (4 trạng thái: AVAILABLE, LOCKED, SOLD, EXPIRED)
+
+**Các điểm kỹ thuật quan trọng được làm rõ:**
+
+- **Xử lý concurrency:** Sử dụng Redis distributed lock với SET NX EX để đảm bảo không có race condition khi nhiều customer cùng chọn 1 ghế.
+
+- **Payment integration:** Áp dụng cơ chế IPN (Instant Payment Notification) và validate signature để đảm bảo tính bảo mật và chính xác của giao dịch.
+
+- **Transaction management:** Tất cả các thao tác quan trọng (thanh toán, hủy vé, tạo suất chiếu) đều được thực hiện trong database transaction để đảm bảo tính ACID.
+
+- **Timeout handling:** Sử dụng Redis TTL và Scheduler job để tự động giải phóng ghế lock sau 5 phút và hủy booking chưa thanh toán sau 15 phút.
+
+Các mô hình này sẽ là cơ sở để thiết kế kiến trúc hệ thống (Chương 4) và thiết kế cơ sở dữ liệu (Chương 5).
+
+---
+
+**Trang tiếp theo:** Chương 4 - Thiết kế kiến trúc hệ thống
