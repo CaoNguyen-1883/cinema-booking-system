@@ -729,6 +729,84 @@ CREATE INDEX idx_movie_genres_genre_id ON movie_genres(genre_id);
 COMMENT ON TABLE movie_genres IS 'Many-to-many relationship between movies and genres';
 ```
 
+### 5.2.12 Payments Table
+
+Lưu thông tin thanh toán chi tiết cho mỗi booking.
+
+**DDL:**
+
+```sql
+CREATE TABLE payments (
+    payment_id BIGSERIAL PRIMARY KEY,
+    booking_id BIGINT NOT NULL REFERENCES bookings(booking_id) ON DELETE RESTRICT,
+    payment_method VARCHAR(50) NOT NULL,
+    payment_provider VARCHAR(50) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) NOT NULL DEFAULT 'VND',
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    transaction_id VARCHAR(255),
+    provider_transaction_id VARCHAR(255),
+    payment_url TEXT,
+    request_data JSONB,
+    response_data JSONB,
+    callback_data JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    paid_at TIMESTAMP,
+    expired_at TIMESTAMP,
+    refund_id VARCHAR(255),
+    refund_amount DECIMAL(10, 2),
+    refunded_at TIMESTAMP,
+    error_code VARCHAR(50),
+    error_message TEXT,
+
+    CONSTRAINT payments_amount_positive CHECK (amount > 0),
+    CONSTRAINT payments_status_valid CHECK (status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED', 'REFUNDED', 'EXPIRED')),
+    CONSTRAINT payments_method_valid CHECK (payment_method IN ('VNPAY', 'MOMO', 'ZALOPAY', 'CARD', 'CASH', 'BANK_TRANSFER')),
+    CONSTRAINT payments_provider_valid CHECK (payment_provider IN ('VNPAY', 'MOMO', 'ZALOPAY', 'STRIPE', 'INTERNAL'))
+);
+
+-- Indexes
+CREATE INDEX idx_payments_booking_id ON payments(booking_id);
+CREATE INDEX idx_payments_status ON payments(status);
+CREATE INDEX idx_payments_transaction_id ON payments(transaction_id);
+CREATE INDEX idx_payments_provider_transaction_id ON payments(provider_transaction_id);
+CREATE INDEX idx_payments_booking_status ON payments(booking_id, status);
+
+-- Comments
+COMMENT ON TABLE payments IS 'Payment transactions for bookings';
+COMMENT ON COLUMN payments.payment_method IS 'VNPAY, MOMO, ZALOPAY, CARD, CASH, BANK_TRANSFER';
+COMMENT ON COLUMN payments.payment_provider IS 'Payment gateway: VNPAY, MOMO, ZALOPAY, STRIPE, INTERNAL';
+```
+
+**Trigger cập nhật booking khi payment hoàn thành:**
+
+```sql
+CREATE OR REPLACE FUNCTION update_booking_on_payment()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.status = 'COMPLETED' AND OLD.status != 'COMPLETED' THEN
+        UPDATE bookings SET status = 'CONFIRMED', paid_at = NEW.paid_at
+        WHERE booking_id = NEW.booking_id;
+        UPDATE show_seats ss SET status = 'SOLD'
+        FROM booking_seats bs WHERE bs.booking_id = NEW.booking_id AND ss.show_seat_id = bs.show_seat_id;
+    END IF;
+    IF NEW.status IN ('FAILED', 'EXPIRED') AND OLD.status = 'PENDING' THEN
+        UPDATE bookings SET status = 'FAILED' WHERE booking_id = NEW.booking_id;
+        UPDATE show_seats ss SET status = 'AVAILABLE', locked_by = NULL
+        FROM booking_seats bs WHERE bs.booking_id = NEW.booking_id AND ss.show_seat_id = bs.show_seat_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_booking_on_payment
+AFTER UPDATE ON payments FOR EACH ROW
+WHEN (OLD.status IS DISTINCT FROM NEW.status)
+EXECUTE FUNCTION update_booking_on_payment();
+```
+
+
 ---
 
 ## 5.3 Quan hệ và ràng buộc (Relationships & Constraints)

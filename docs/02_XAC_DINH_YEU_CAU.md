@@ -1188,10 +1188,10 @@ Yêu cầu phi chức năng mô tả các thuộc tính chất lượng của h�
 
 **Công nghệ bắt buộc:**
 
-- **Backend:** Spring Boot 3.2 (Java 17)
+- **Backend:** Spring Boot 3.3.x (Java 21)
   - Lý do: Yêu cầu của môn học, phù hợp với enterprise application
 
-- **Database:** PostgreSQL 15
+- **Database:** PostgreSQL 16
   - Lý do: Open-source, ACID compliance, tốt cho relational data
 
 - **Cache:** Redis 7
