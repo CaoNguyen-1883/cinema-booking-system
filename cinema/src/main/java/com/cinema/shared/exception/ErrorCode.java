@@ -11,8 +11,9 @@ public enum ErrorCode {
     AUTH_INVALID_CREDENTIALS(1001, "Invalid email or password", HttpStatus.UNAUTHORIZED),
     AUTH_TOKEN_EXPIRED(1002, "Access token has expired", HttpStatus.UNAUTHORIZED),
     AUTH_TOKEN_INVALID(1003, "Invalid access token", HttpStatus.UNAUTHORIZED),
-    AUTH_ACCESS_DENIED(1004, "Access denied", HttpStatus.FORBIDDEN),
-    AUTH_USER_DISABLED(1005, "User account is disabled", HttpStatus.FORBIDDEN),
+    ACCESS_DENIED(1004, "Access denied", HttpStatus.FORBIDDEN),
+    AUTH_ACCOUNT_DISABLED(1005, "User account is disabled", HttpStatus.UNAUTHORIZED),
+    AUTH_ACCOUNT_LOCKED(1006, "User account is locked", HttpStatus.UNAUTHORIZED),
 
     // User (2xxx)
     USER_NOT_FOUND(2001, "User not found", HttpStatus.NOT_FOUND),
@@ -54,14 +55,20 @@ public enum ErrorCode {
     CINEMA_NOT_FOUND(8001, "Cinema not found", HttpStatus.NOT_FOUND),
     HALL_NOT_FOUND(8002, "Hall not found", HttpStatus.NOT_FOUND),
 
-    // Validation (9xxx)
+    // Validation & HTTP (9xxx)
     VALIDATION_ERROR(9001, "Validation error", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(9002, "Invalid request", HttpStatus.BAD_REQUEST),
+    METHOD_NOT_ALLOWED(9003, "Method not allowed", HttpStatus.METHOD_NOT_ALLOWED),
+    UNSUPPORTED_MEDIA_TYPE(9004, "Unsupported media type", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    RESOURCE_NOT_FOUND(9005, "Resource not found", HttpStatus.NOT_FOUND),
+    DUPLICATE_RESOURCE(9006, "Resource already exists", HttpStatus.CONFLICT),
+    INVALID_STATE(9007, "Invalid state for this operation", HttpStatus.CONFLICT),
 
     // System (10xxx)
     INTERNAL_ERROR(10001, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
     SERVICE_UNAVAILABLE(10002, "Service unavailable", HttpStatus.SERVICE_UNAVAILABLE),
-    RATE_LIMIT_EXCEEDED(10003, "Too many requests", HttpStatus.TOO_MANY_REQUESTS);
+    RATE_LIMIT_EXCEEDED(10003, "Too many requests", HttpStatus.TOO_MANY_REQUESTS),
+    DATABASE_ERROR(10004, "Database error", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;
     private final String message;

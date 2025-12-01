@@ -135,19 +135,21 @@ Process:
 - Kiểm tra user tồn tại trong database
 - Verify password (so sánh hash)
 - Kiểm tra tài khoản có bị khóa không (is_active = true)
-- Generate JWT access token (expiry: 1 giờ)
-- Generate JWT refresh token (expiry: 7 ngày)
-- Lưu refresh token vào database hoặc Redis
+- Generate JWT access token (expiry: 30 phút, chứa userId, role, tokenVersion)
+- Generate JWT refresh token (expiry: 30 ngày, chứa userId, tokenVersion)
+- Set refresh token vào HttpOnly Cookie (Secure, SameSite=Strict)
 
 Output:
-- Access token
-- Refresh token
+- Access token (trong response body)
+- Refresh token (trong HttpOnly Cookie, không trả về body)
 - Thông tin user (id, username, email, fullName, role)
 
 Business Rules:
 - Sau 5 lần đăng nhập sai liên tiếp, khóa tài khoản 15 phút
-- Token được lưu trong localStorage (frontend)
-- Token phải được gửi trong header Authorization cho các request sau
+- Access token lưu trong memory (React state), KHÔNG lưu localStorage (tránh XSS)
+- Refresh token lưu trong HttpOnly Cookie (browser tự động gửi, không bị XSS đọc)
+- Access token gửi trong header Authorization: Bearer {token}
+- Sử dụng Token Version để hỗ trợ revoke token (mỗi user có field tokenVersion trong DB)
 
 **FR-03: Quên mật khẩu**
 
@@ -231,9 +233,9 @@ Output:
 Mô tả: Người dùng đăng xuất khỏi hệ thống.
 
 Process:
-- Xóa refresh token trong database/Redis
-- Frontend xóa tokens trong localStorage
-- Redirect về trang login
+- Backend tăng tokenVersion trong User entity (invalidate tất cả tokens cũ)
+- Clear HttpOnly Cookie chứa refresh token (set maxAge=0)
+- Frontend xóa access token trong memory và redirect về trang login
 
 ### 2.2.2 Module Quản lý phim (Movie Management)
 
@@ -1009,9 +1011,11 @@ Yêu cầu phi chức năng mô tả các thuộc tính chất lượng của h�
 **NFR-07: Authentication**
 
 - Sử dụng JWT (JSON Web Token) cho authentication
-- Access token expiry: 1 giờ
-- Refresh token expiry: 7 ngày
+- Access token expiry: 30 phút (stateless, không lưu DB)
+- Refresh token expiry: 30 ngày (lưu trong HttpOnly Cookie)
+- Token Version strategy: revoke all tokens bằng cách tăng tokenVersion trong User table
 - Tokens được truyền qua HTTPS
+- Refresh token: HttpOnly, Secure, SameSite=Strict
 
 **NFR-08: Password Security**
 
