@@ -176,6 +176,61 @@ Các nguyên tắc thiết kế:
 
 ## 5.2 Thiết kế bảng (Table Schema)
 
+### 5.2.0 Audit Columns Pattern
+
+Tất cả các bảng chính trong hệ thống đều sử dụng **Audit Columns Pattern** để hỗ trợ:
+
+1. **Soft Delete:** Thay vì xóa vĩnh viễn, đánh dấu record là đã xóa
+2. **Audit Trail:** Theo dõi ai tạo/sửa/xóa và khi nào
+3. **Optimistic Locking:** Tránh xung đột khi nhiều người cùng sửa
+
+**Các columns audit chung:**
+
+| Column | Type | Mô tả |
+|--------|------|-------|
+| `version` | BIGINT | Số version cho optimistic locking (JPA @Version) |
+| `created_at` | TIMESTAMP | Thời điểm tạo record |
+| `created_by` | VARCHAR(100) | Username người tạo |
+| `updated_at` | TIMESTAMP | Thời điểm cập nhật cuối |
+| `updated_by` | VARCHAR(100) | Username người cập nhật |
+| `deleted` | BOOLEAN | Flag soft delete (TRUE = đã xóa) |
+| `deleted_at` | TIMESTAMP | Thời điểm xóa |
+| `deleted_by` | VARCHAR(100) | Username người xóa |
+
+**Lợi ích:**
+- **Recovery:** Có thể phục hồi dữ liệu đã xóa
+- **Compliance:** Đáp ứng yêu cầu audit cho nghiệp vụ
+- **Data integrity:** Giữ nguyên foreign key references
+- **History:** Biết được ai làm gì, khi nào
+
+**Base Entity trong Java:**
+```java
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+public abstract class BaseEntity {
+    @Version
+    private Long version;
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @CreatedBy
+    private String createdBy;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+
+    @LastModifiedBy
+    private String updatedBy;
+
+    private boolean deleted = false;
+    private LocalDateTime deletedAt;
+    private String deletedBy;
+}
+```
+
+---
+
 ### 5.2.1 Users Table
 
 Lưu thông tin tài khoản người dùng.
@@ -195,13 +250,17 @@ CREATE TABLE users (
     token_version BIGINT NOT NULL DEFAULT 0,
     role VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER',
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    confirmed_at TIMESTAMP,
-    paid_at TIMESTAMP,
-    failed_at TIMESTAMP,
-    failure_reason TEXT,
     last_login_at TIMESTAMP,
+
+    -- Audit columns (Soft Delete + Tracking)
+    version BIGINT NOT NULL DEFAULT 0,              -- Optimistic locking
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),                        -- Who created
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(100),                        -- Who updated
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,         -- Soft delete flag
+    deleted_at TIMESTAMP,                           -- When deleted
+    deleted_by VARCHAR(100),                        -- Who deleted
 
     CONSTRAINT users_points_non_negative CHECK (points >= 0),
     CONSTRAINT users_role_valid CHECK (role IN ('CUSTOMER', 'STAFF', 'ADMIN')),
@@ -252,17 +311,22 @@ CREATE TABLE movies (
     rating VARCHAR(10) NOT NULL,
     language VARCHAR(50) NOT NULL DEFAULT 'Vietnamese',
     subtitle VARCHAR(50),
+    country VARCHAR(100),
     poster_url VARCHAR(500),
     banner_url VARCHAR(500),
     trailer_url VARCHAR(500),
     description TEXT,
     status VARCHAR(20) NOT NULL DEFAULT 'NOW_SHOWING',
+
+    -- Audit columns (Soft Delete + Tracking)
+    version BIGINT NOT NULL DEFAULT 0,              -- Optimistic locking
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),                        -- Who created
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    confirmed_at TIMESTAMP,
-    paid_at TIMESTAMP,
-    failed_at TIMESTAMP,
-    failure_reason TEXT,
+    updated_by VARCHAR(100),                        -- Who updated
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,         -- Soft delete flag
+    deleted_at TIMESTAMP,                           -- When deleted
+    deleted_by VARCHAR(100),                        -- Who deleted
 
     CONSTRAINT movies_duration_positive CHECK (duration > 0),
     CONSTRAINT movies_rating_valid CHECK (rating IN ('P', 'K', 'T13', 'T16', 'T18', 'C')),

@@ -47,6 +47,10 @@ public enum ErrorCode {
     BOOKING_CANNOT_CANCEL(6003, "Booking cannot be cancelled", HttpStatus.BAD_REQUEST),
     BOOKING_PAYMENT_TIMEOUT(6004, "Payment timeout", HttpStatus.REQUEST_TIMEOUT),
     BOOKING_NO_SEATS(6005, "No seats selected", HttpStatus.BAD_REQUEST),
+    BOOKING_MAX_SEATS_EXCEEDED(6006, "Maximum 10 seats per booking", HttpStatus.BAD_REQUEST),
+    BOOKING_EXPIRED(6007, "Booking has expired", HttpStatus.BAD_REQUEST),
+    BOOKING_NOT_PENDING(6008, "Booking is not in pending status", HttpStatus.BAD_REQUEST),
+    BOOKING_ALREADY_EXISTS(6009, "You already have a pending booking for this show", HttpStatus.CONFLICT),
 
     // Payment (7xxx)
     PAYMENT_NOT_FOUND(7001, "Payment not found", HttpStatus.NOT_FOUND),

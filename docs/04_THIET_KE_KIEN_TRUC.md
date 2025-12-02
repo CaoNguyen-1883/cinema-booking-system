@@ -23,7 +23,15 @@ Các quyết định kiến trúc được đưa ra dựa trên:
 
 ## 4.1 Kiến trúc tổng thể
 
-### 4.1.1 Mô hình 3-Tier Architecture
+### 4.1.1 Mô hình 3-Tier Architecture với Modular Monolith
+
+Hệ thống áp dụng kiến trúc **3-tier** kết hợp với **Modular Monolith** - một kiến trúc hiện đại giúp tổ chức code theo business domain thay vì technical layer:
+
+**Tại sao chọn Modular Monolith?**
+- **Domain-driven:** Code được tổ chức theo nghiệp vụ (auth, movie, booking...) thay vì layer (controller, service, repository)
+- **Dễ maintain:** Khi sửa một tính năng, tất cả code liên quan nằm trong cùng module
+- **Microservices-ready:** Dễ dàng tách thành microservices khi cần scale
+- **Clear boundaries:** Mỗi module có trách nhiệm riêng, giảm coupling
 
 Hệ thống áp dụng kiến trúc 3-tier (3 tầng) phổ biến trong các ứng dụng web enterprise:
 
@@ -367,31 +375,105 @@ Hệ thống áp dụng kiến trúc 4 lớp (4-layer architecture) với sự p
    - Custom validators: @ValidSeatSelection
    ```
 
-**Package structure:**
+**Package structure (Modular Monolith):**
+
+Thay vì tổ chức theo layer truyền thống, hệ thống sử dụng Modular Monolith với mỗi module chứa đầy đủ các layer:
+
 ```
-com.cinema.presentation
-├── controller
-│   ├── UserController.java
-│   ├── MovieController.java
-│   ├── BookingController.java
-│   ├── PaymentController.java
-│   └── AdminController.java
-├── dto
-│   ├── request
-│   │   ├── UserRegistrationRequest.java
+com.cinema
+├── auth/                          # Module xác thực
+│   ├── controller/
+│   │   └── AuthController.java
+│   ├── dto/
 │   │   ├── LoginRequest.java
-│   │   ├── SeatLockRequest.java
-│   │   └── CheckoutRequest.java
-│   └── response
-│       ├── UserResponse.java
-│       ├── MovieResponse.java
-│       ├── BookingResponse.java
-│       └── ErrorResponse.java
-├── exception
-│   └── GlobalExceptionHandler.java
-└── validation
-    └── SeatSelectionValidator.java
+│   │   ├── RegisterRequest.java
+│   │   └── AuthResponse.java
+│   ├── service/
+│   │   └── AuthService.java
+│   └── security/
+│       ├── JwtTokenProvider.java
+│       └── JwtAuthenticationFilter.java
+│
+├── user/                          # Module người dùng
+│   ├── controller/
+│   │   ├── UserController.java
+│   │   └── AdminUserController.java
+│   ├── dto/
+│   ├── entity/
+│   │   └── User.java
+│   ├── repository/
+│   │   └── UserRepository.java
+│   └── service/
+│       └── UserService.java
+│
+├── movie/                         # Module phim
+│   ├── controller/
+│   │   ├── MovieController.java
+│   │   ├── AdminMovieController.java
+│   │   └── GenreController.java
+│   ├── dto/
+│   ├── entity/
+│   │   ├── Movie.java
+│   │   └── Genre.java
+│   ├── repository/
+│   └── service/
+│
+├── cinema/                        # Module rạp chiếu
+│   ├── controller/
+│   │   ├── CinemaController.java
+│   │   └── AdminCinemaController.java
+│   ├── entity/
+│   │   ├── Cinema.java
+│   │   ├── Hall.java
+│   │   └── Seat.java
+│   ├── repository/
+│   └── service/
+│
+├── show/                          # Module suất chiếu
+│   ├── controller/
+│   │   ├── ShowController.java
+│   │   └── AdminShowController.java
+│   ├── entity/
+│   │   ├── Show.java
+│   │   └── ShowSeat.java
+│   ├── repository/
+│   └── service/
+│
+├── booking/                       # Module đặt vé
+│   ├── controller/
+│   ├── entity/
+│   │   ├── Booking.java
+│   │   └── BookingSeat.java
+│   ├── repository/
+│   └── service/
+│
+├── notification/                  # Module thông báo
+│   └── service/
+│       └── EmailService.java
+│
+├── storage/                       # Module lưu trữ file
+│   └── service/
+│       └── FileStorageService.java
+│
+└── shared/                        # Module dùng chung
+    ├── config/
+    │   ├── SecurityConfig.java
+    │   └── OpenApiConfig.java
+    ├── dto/
+    │   └── ApiResponse.java
+    ├── entity/
+    │   └── BaseEntity.java        # Audit fields
+    └── exception/
+        ├── GlobalExceptionHandler.java
+        ├── BusinessException.java
+        └── ErrorCode.java
 ```
+
+**Lợi ích của cấu trúc này:**
+- Mỗi module là một bounded context hoàn chỉnh
+- Dễ tìm code: muốn sửa Movie → vào module movie
+- Dễ test: test từng module độc lập
+- Dễ tách microservices: mỗi module có thể trở thành một service
 
 ### 4.2.2 Business Logic Layer
 
@@ -1679,68 +1761,73 @@ public class PaymentService {
 - Client code không phụ thuộc vào concrete classes
 - Centralized object creation
 
-### 4.4.4 Strategy Pattern
+### 4.4.4 Pricing Logic (Fixed Amount Strategy)
 
-**Mục đích:** Define a family of algorithms, encapsulate each one, make them interchangeable.
+**Mục đích:** Tính giá vé linh hoạt dựa trên loại ghế và ngày chiếu.
 
-**Implementation:**
+**Quy tắc định giá (VND cố định):**
+
+| Loại ghế | Phụ thu | Mô tả |
+|----------|---------|-------|
+| NORMAL | +0 VND | Ghế thường |
+| VIP | +20,000 VND | Ghế VIP (hàng giữa, tầm nhìn tốt) |
+| COUPLE | x2 giá cơ bản | Ghế đôi (cho 2 người) |
+| Weekend | +30,000 VND | Thứ 7, Chủ nhật |
+
+**Ví dụ tính giá:**
+- Base price: 80,000 VND
+- Ghế VIP ngày thường: 80,000 + 20,000 = **100,000 VND**
+- Ghế thường cuối tuần: 80,000 + 30,000 = **110,000 VND**
+- Ghế VIP cuối tuần: 80,000 + 20,000 + 30,000 = **130,000 VND**
+- Ghế đôi cuối tuần: (80,000 x 2) + 30,000 = **190,000 VND**
+
+**Implementation trong ShowService:**
 
 ```java
-// Pricing strategy interface
-public interface PricingStrategy {
-    BigDecimal calculatePrice(Show show, Seat seat);
-}
-
-// Different pricing strategies
-@Component
-public class WeekdayPricingStrategy implements PricingStrategy {
-    @Override
-    public BigDecimal calculatePrice(Show show, Seat seat) {
-        BigDecimal basePrice = show.getBasePrice();
-        if (seat.getSeatType() == SeatType.VIP) {
-            return basePrice.multiply(BigDecimal.valueOf(1.5));
-        }
-        return basePrice;
-    }
-}
-
-@Component
-public class WeekendPricingStrategy implements PricingStrategy {
-    @Override
-    public BigDecimal calculatePrice(Show show, Seat seat) {
-        BigDecimal basePrice = show.getBasePrice();
-        // Weekend: +20% base price
-        basePrice = basePrice.multiply(BigDecimal.valueOf(1.2));
-        if (seat.getSeatType() == SeatType.VIP) {
-            return basePrice.multiply(BigDecimal.valueOf(1.5));
-        }
-        return basePrice;
-    }
-}
-
-// Context uses strategy
 @Service
 public class ShowService {
+    // Fixed price increases (VND)
+    private static final BigDecimal VIP_PRICE_INCREASE = new BigDecimal("20000");
+    private static final BigDecimal WEEKEND_PRICE_INCREASE = new BigDecimal("30000");
 
-    public BigDecimal calculateSeatPrice(Show show, Seat seat) {
-        PricingStrategy strategy = getPricingStrategy(show.getShowDate());
-        return strategy.calculatePrice(show, seat);
-    }
+    private void generateShowSeats(Show show, Hall hall, BigDecimal basePrice, LocalDate showDate) {
+        boolean isWeekend = showDate.getDayOfWeek() == DayOfWeek.SATURDAY ||
+                           showDate.getDayOfWeek() == DayOfWeek.SUNDAY;
 
-    private PricingStrategy getPricingStrategy(LocalDate date) {
-        DayOfWeek dayOfWeek = date.getDayOfWeek();
-        if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
-            return weekendPricingStrategy;
+        for (Seat seat : activeSeats) {
+            BigDecimal seatPrice = basePrice;
+
+            // VIP: +20,000 VND
+            if (seat.getSeatType() == Seat.SeatType.VIP) {
+                seatPrice = seatPrice.add(VIP_PRICE_INCREASE);
+            }
+            // COUPLE: x2 base price (for 2 people)
+            else if (seat.getSeatType() == Seat.SeatType.COUPLE) {
+                seatPrice = seatPrice.multiply(new BigDecimal("2"));
+            }
+
+            // Weekend: +30,000 VND
+            if (isWeekend) {
+                seatPrice = seatPrice.add(WEEKEND_PRICE_INCREASE);
+            }
+
+            ShowSeat showSeat = ShowSeat.builder()
+                    .show(show)
+                    .seat(seat)
+                    .price(seatPrice)
+                    .status(ShowSeatStatus.AVAILABLE)
+                    .build();
+            showSeats.add(showSeat);
         }
-        return weekdayPricingStrategy;
     }
 }
 ```
 
-**Lợi ích:**
-- Dễ thêm pricing strategies mới
-- Business rules pricing được encapsulate
-- Runtime flexibility
+**Tại sao dùng fixed amount thay vì %:**
+- Dễ hiểu với khách hàng ("+20K cho VIP" vs "+50%")
+- Giá cố định, dễ kiểm soát ngân sách
+- Phù hợp với thị trường Việt Nam
+- Tránh giá lẻ khó thanh toán (VD: 127,500 VND)
 
 ### 4.4.5 Builder Pattern
 
