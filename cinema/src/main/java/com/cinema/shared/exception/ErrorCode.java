@@ -30,6 +30,9 @@ public enum ErrorCode {
     SHOW_ALREADY_STARTED(4002, "Show has already started", HttpStatus.BAD_REQUEST),
     SHOW_CANCELLED(4003, "Show has been cancelled", HttpStatus.BAD_REQUEST),
     SHOW_FULL(4004, "Show is fully booked", HttpStatus.BAD_REQUEST),
+    SHOW_SCHEDULE_CONFLICT(4005, "Show schedule conflicts with existing show", HttpStatus.CONFLICT),
+    SHOW_TIME_IN_PAST(4006, "Show time must be in the future", HttpStatus.BAD_REQUEST),
+    SHOW_HAS_BOOKINGS(4007, "Cannot modify show with existing bookings", HttpStatus.CONFLICT),
 
     // Seat (5xxx)
     SEAT_NOT_FOUND(5001, "Seat not found", HttpStatus.NOT_FOUND),
