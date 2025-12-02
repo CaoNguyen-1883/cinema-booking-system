@@ -37,7 +37,7 @@ Các nguyên tắc thiết kế:
                          ┌──────────────┐
                          │    USERS     │
                          ├──────────────┤
-                         │ PK: user_id  │
+                         │ PK: id       │
                          │    email     │
                          │    password  │
                          │    full_name │
@@ -125,47 +125,47 @@ Các nguyên tắc thiết kế:
 **1. User - Booking (1:N)**
 - Một User có thể có nhiều Bookings
 - Một Booking thuộc về một User duy nhất
-- Relationship: `users.user_id` ← `bookings.user_id`
+- Relationship: `users.id` ← `bookings.user_id`
 
 **2. Show - Booking (1:N)**
 - Một Show có thể có nhiều Bookings
 - Một Booking chỉ cho một Show duy nhất
-- Relationship: `shows.show_id` ← `bookings.show_id`
+- Relationship: `shows.id` ← `bookings.show_id`
 
 **3. Booking - BookingSeat (1:N)**
 - Một Booking có nhiều BookingSeats (many tickets)
 - Một BookingSeat thuộc về một Booking duy nhất
-- Relationship: `bookings.booking_id` ← `booking_seats.booking_id`
+- Relationship: `bookings.id` ← `booking_seats.booking_id`
 
 **4. Show - ShowSeat (1:N)**
 - Một Show có nhiều ShowSeats (all seats in hall for that show)
 - Một ShowSeat thuộc về một Show duy nhất
-- Relationship: `shows.show_id` ← `show_seats.show_id`
+- Relationship: `shows.id` ← `show_seats.show_id`
 
 **5. Seat - ShowSeat (1:N)**
 - Một Seat (physical seat) xuất hiện trong nhiều ShowSeats (different shows)
 - Một ShowSeat tham chiếu đến một Seat duy nhất
-- Relationship: `seats.seat_id` ← `show_seats.seat_id`
+- Relationship: `seats.id` ← `show_seats.seat_id`
 
 **6. Movie - Show (1:N)**
 - Một Movie có nhiều Shows (different times, halls, dates)
 - Một Show chiếu một Movie duy nhất
-- Relationship: `movies.movie_id` ← `shows.movie_id`
+- Relationship: `movies.id` ← `shows.movie_id`
 
 **7. Hall - Show (1:N)**
 - Một Hall có nhiều Shows (different times, dates)
 - Một Show diễn ra trong một Hall duy nhất
-- Relationship: `halls.hall_id` ← `shows.hall_id`
+- Relationship: `halls.id` ← `shows.hall_id`
 
 **8. Hall - Seat (1:N)**
 - Một Hall có nhiều Seats (physical seats)
 - Một Seat thuộc về một Hall duy nhất
-- Relationship: `halls.hall_id` ← `seats.hall_id`
+- Relationship: `halls.id` ← `seats.hall_id`
 
 **9. Cinema - Hall (1:N)**
 - Một Cinema có nhiều Halls
 - Một Hall thuộc về một Cinema duy nhất
-- Relationship: `cinemas.cinema_id` ← `halls.cinema_id`
+- Relationship: `cinemas.id` ← `halls.cinema_id`
 
 **10. Movie - Genre (N:M)**
 - Một Movie có nhiều Genres
@@ -184,20 +184,25 @@ Lưu thông tin tài khoản người dùng.
 
 ```sql
 CREATE TABLE users (
-    user_id BIGSERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20),
+    avatar_url VARCHAR(500),
     points INTEGER NOT NULL DEFAULT 0,
+    token_version BIGINT NOT NULL DEFAULT 0,
     role VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER',
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
     last_login_at TIMESTAMP,
 
-    CONSTRAINT users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
     CONSTRAINT users_points_non_negative CHECK (points >= 0),
     CONSTRAINT users_role_valid CHECK (role IN ('CUSTOMER', 'STAFF', 'ADMIN')),
     CONSTRAINT users_status_valid CHECK (status IN ('ACTIVE', 'INACTIVE', 'BANNED'))
@@ -212,7 +217,9 @@ CREATE INDEX idx_users_created_at ON users(created_at);
 -- Comments
 COMMENT ON TABLE users IS 'User accounts table';
 COMMENT ON COLUMN users.password_hash IS 'BCrypt hashed password';
+COMMENT ON COLUMN users.avatar_url IS 'URL to user profile avatar image';
 COMMENT ON COLUMN users.points IS 'Loyalty points (1000 VND = 1 point)';
+COMMENT ON COLUMN users.token_version IS 'Version number for JWT token invalidation';
 COMMENT ON COLUMN users.role IS 'User role: CUSTOMER, STAFF, ADMIN';
 COMMENT ON COLUMN users.status IS 'Account status: ACTIVE, INACTIVE, BANNED';
 ```
@@ -234,23 +241,28 @@ Lưu thông tin phim.
 
 ```sql
 CREATE TABLE movies (
-    movie_id BIGSERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     original_title VARCHAR(255),
     director VARCHAR(255) NOT NULL,
-    cast TEXT,
-    genre VARCHAR(255) NOT NULL,
+    cast_members TEXT,
     duration INTEGER NOT NULL,
     release_date DATE NOT NULL,
+    end_date DATE,
     rating VARCHAR(10) NOT NULL,
-    language VARCHAR(50) NOT NULL DEFAULT 'English',
+    language VARCHAR(50) NOT NULL DEFAULT 'Vietnamese',
     subtitle VARCHAR(50),
     poster_url VARCHAR(500),
+    banner_url VARCHAR(500),
     trailer_url VARCHAR(500),
     description TEXT,
     status VARCHAR(20) NOT NULL DEFAULT 'NOW_SHOWING',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
 
     CONSTRAINT movies_duration_positive CHECK (duration > 0),
     CONSTRAINT movies_rating_valid CHECK (rating IN ('P', 'K', 'T13', 'T16', 'T18', 'C')),
@@ -269,6 +281,9 @@ CREATE INDEX idx_movies_search ON movies USING gin(
 
 -- Comments
 COMMENT ON TABLE movies IS 'Movies catalog';
+COMMENT ON COLUMN movies.cast_members IS 'Comma-separated list of cast members';
+COMMENT ON COLUMN movies.banner_url IS 'URL to movie banner image for headers';
+COMMENT ON COLUMN movies.end_date IS 'Date when movie stops showing';
 COMMENT ON COLUMN movies.duration IS 'Duration in minutes';
 COMMENT ON COLUMN movies.rating IS 'Age rating: P(All ages), K(Kids), T13(13+), T16(16+), T18(18+), C(Restricted)';
 COMMENT ON COLUMN movies.status IS 'NOW_SHOWING, COMING_SOON, ENDED';
@@ -293,18 +308,22 @@ Lưu thông tin rạp chiếu phim.
 
 ```sql
 CREATE TABLE cinemas (
-    cinema_id BIGSERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     address TEXT NOT NULL,
     city VARCHAR(100) NOT NULL,
     district VARCHAR(100),
     phone_number VARCHAR(20) NOT NULL,
     email VARCHAR(255),
-    opening_hours VARCHAR(100) DEFAULT '06:00-24:00',
+    opening_hours VARCHAR(100) DEFAULT '08:00-24:00',
     facilities TEXT,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
 
     CONSTRAINT cinemas_status_valid CHECK (status IN ('ACTIVE', 'INACTIVE', 'MAINTENANCE'))
 );
@@ -340,20 +359,23 @@ Lưu thông tin phòng chiếu.
 
 ```sql
 CREATE TABLE halls (
-    hall_id BIGSERIAL PRIMARY KEY,
-    cinema_id BIGINT NOT NULL REFERENCES cinemas(cinema_id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    cinema_id BIGINT NOT NULL REFERENCES cinemas(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     hall_type VARCHAR(20) NOT NULL DEFAULT 'STANDARD',
+    total_rows INTEGER NOT NULL,
+    seats_per_row INTEGER NOT NULL,
     total_seats INTEGER NOT NULL,
-    seat_layout JSON,
-    screen_type VARCHAR(50),
-    sound_system VARCHAR(50),
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
 
     CONSTRAINT halls_total_seats_positive CHECK (total_seats > 0),
-    CONSTRAINT halls_hall_type_valid CHECK (hall_type IN ('STANDARD', 'VIP', 'IMAX', '3D', '4DX')),
+    CONSTRAINT halls_hall_type_valid CHECK (hall_type IN ('STANDARD', 'VIP', 'IMAX', 'THREE_D', 'FOUR_DX')),
     CONSTRAINT halls_status_valid CHECK (status IN ('ACTIVE', 'INACTIVE', 'MAINTENANCE')),
     UNIQUE (cinema_id, name)
 );
@@ -365,8 +387,9 @@ CREATE INDEX idx_halls_hall_type ON halls(hall_type);
 
 -- Comments
 COMMENT ON TABLE halls IS 'Cinema halls/screens';
-COMMENT ON COLUMN halls.seat_layout IS 'JSON structure defining rows, columns, aisles';
-COMMENT ON COLUMN halls.hall_type IS 'STANDARD, VIP, IMAX, 3D, 4DX';
+COMMENT ON COLUMN halls.total_rows IS 'Number of seat rows in the hall';
+COMMENT ON COLUMN halls.seats_per_row IS 'Number of seats per row';
+COMMENT ON COLUMN halls.hall_type IS 'STANDARD, VIP, IMAX, THREE_D, FOUR_DX';
 ```
 
 **Sample Data:**
@@ -387,33 +410,34 @@ Lưu thông tin ghế ngồi (physical seats).
 
 ```sql
 CREATE TABLE seats (
-    seat_id BIGSERIAL PRIMARY KEY,
-    hall_id BIGINT NOT NULL REFERENCES halls(hall_id) ON DELETE CASCADE,
-    row_number VARCHAR(5) NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    hall_id BIGINT NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
+    row_name VARCHAR(5) NOT NULL,
     seat_number VARCHAR(5) NOT NULL,
     seat_type VARCHAR(20) NOT NULL DEFAULT 'NORMAL',
-    position_x INTEGER,
-    position_y INTEGER,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
 
-    CONSTRAINT seats_seat_type_valid CHECK (seat_type IN ('NORMAL', 'VIP', 'PREMIUM', 'COUPLE')),
+    CONSTRAINT seats_seat_type_valid CHECK (seat_type IN ('NORMAL', 'VIP', 'COUPLE')),
     CONSTRAINT seats_status_valid CHECK (status IN ('ACTIVE', 'INACTIVE', 'BROKEN')),
-    UNIQUE (hall_id, row_number, seat_number)
+    UNIQUE (hall_id, row_name, seat_number)
 );
 
 -- Indexes
 CREATE INDEX idx_seats_hall_id ON seats(hall_id);
 CREATE INDEX idx_seats_status ON seats(status);
 CREATE INDEX idx_seats_type ON seats(seat_type);
-CREATE UNIQUE INDEX idx_seats_unique_position ON seats(hall_id, row_number, seat_number);
+CREATE UNIQUE INDEX idx_seats_unique_position ON seats(hall_id, row_name, seat_number);
 
 -- Comments
 COMMENT ON TABLE seats IS 'Physical seats in halls';
-COMMENT ON COLUMN seats.seat_type IS 'NORMAL, VIP, PREMIUM, COUPLE';
-COMMENT ON COLUMN seats.position_x IS 'X coordinate for seat map visualization';
-COMMENT ON COLUMN seats.position_y IS 'Y coordinate for seat map visualization';
+COMMENT ON COLUMN seats.seat_type IS 'NORMAL, VIP, COUPLE';
+COMMENT ON COLUMN seats.row_name IS 'Row identifier (A, B, C, etc.)';
 ```
 
 **Sample Data:**
@@ -443,15 +467,20 @@ Lưu thông tin suất chiếu.
 
 ```sql
 CREATE TABLE shows (
-    show_id BIGSERIAL PRIMARY KEY,
-    movie_id BIGINT NOT NULL REFERENCES movies(movie_id) ON DELETE RESTRICT,
-    hall_id BIGINT NOT NULL REFERENCES halls(hall_id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    movie_id BIGINT NOT NULL REFERENCES movies(id) ON DELETE RESTRICT,
+    hall_id BIGINT NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
     show_date DATE NOT NULL,
-    show_time TIME NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
     base_price DECIMAL(10, 2) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
 
     CONSTRAINT shows_base_price_positive CHECK (base_price > 0),
     CONSTRAINT shows_status_valid CHECK (status IN ('SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED')),
@@ -473,6 +502,8 @@ CREATE INDEX idx_shows_lookup ON shows(movie_id, show_date, status);
 -- Comments
 COMMENT ON TABLE shows IS 'Movie show schedules';
 COMMENT ON COLUMN shows.base_price IS 'Base ticket price in VND';
+COMMENT ON COLUMN shows.start_time IS 'Show start time';
+COMMENT ON COLUMN shows.end_time IS 'Show end time (calculated from start_time + movie duration)';
 COMMENT ON COLUMN shows.status IS 'SCHEDULED, ONGOING, COMPLETED, CANCELLED';
 ```
 
@@ -495,15 +526,19 @@ Lưu trạng thái ghế cho từng suất chiếu.
 
 ```sql
 CREATE TABLE show_seats (
-    show_seat_id BIGSERIAL PRIMARY KEY,
-    show_id BIGINT NOT NULL REFERENCES shows(show_id) ON DELETE CASCADE,
-    seat_id BIGINT NOT NULL REFERENCES seats(seat_id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    show_id BIGINT NOT NULL REFERENCES shows(id) ON DELETE CASCADE,
+    seat_id BIGINT NOT NULL REFERENCES seats(id) ON DELETE CASCADE,
     price DECIMAL(10, 2) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',
-    locked_by BIGINT REFERENCES users(user_id) ON DELETE SET NULL,
+    locked_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
     locked_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
 
     CONSTRAINT show_seats_price_positive CHECK (price > 0),
     CONSTRAINT show_seats_status_valid CHECK (status IN ('AVAILABLE', 'LOCKED', 'SOLD')),
@@ -562,7 +597,7 @@ BEGIN
 
         -- Insert show_seat
         INSERT INTO show_seats (show_id, seat_id, price, status)
-        VALUES (NEW.show_id, seat_record.seat_id, calculated_price, 'AVAILABLE');
+        VALUES (NEW.id, seat_record.id, calculated_price, 'AVAILABLE');
     END LOOP;
 
     RETURN NEW;
@@ -583,31 +618,28 @@ Lưu thông tin đặt vé.
 
 ```sql
 CREATE TABLE bookings (
-    booking_id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
-    show_id BIGINT NOT NULL REFERENCES shows(show_id) ON DELETE RESTRICT,
+    id BIGSERIAL PRIMARY KEY,
+    booking_code VARCHAR(20) NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    show_id BIGINT NOT NULL REFERENCES shows(id) ON DELETE RESTRICT,
     total_amount DECIMAL(10, 2) NOT NULL,
     discount_amount DECIMAL(10, 2) DEFAULT 0,
     final_amount DECIMAL(10, 2) NOT NULL,
     points_used INTEGER DEFAULT 0,
     points_earned INTEGER DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    payment_method VARCHAR(50),
-    transaction_id VARCHAR(255),
     qr_code TEXT,
+    expires_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    paid_at TIMESTAMP,
     cancelled_at TIMESTAMP,
-    refund_id VARCHAR(255),
-    refunded_at TIMESTAMP,
-    notes TEXT,
+    confirmed_at TIMESTAMP,
 
     CONSTRAINT bookings_total_amount_positive CHECK (total_amount > 0),
     CONSTRAINT bookings_final_amount_positive CHECK (final_amount >= 0),
     CONSTRAINT bookings_discount_non_negative CHECK (discount_amount >= 0),
     CONSTRAINT bookings_points_used_non_negative CHECK (points_used >= 0),
     CONSTRAINT bookings_points_earned_non_negative CHECK (points_earned >= 0),
-    CONSTRAINT bookings_status_valid CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'FAILED', 'REFUNDED')),
+    CONSTRAINT bookings_status_valid CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'EXPIRED')),
     CONSTRAINT bookings_payment_consistency CHECK (
         (status = 'CONFIRMED' AND paid_at IS NOT NULL) OR
         (status != 'CONFIRMED')
@@ -639,7 +671,9 @@ COMMENT ON COLUMN bookings.discount_amount IS 'Discount from points or promotion
 COMMENT ON COLUMN bookings.final_amount IS 'Amount actually paid (total - discount)';
 COMMENT ON COLUMN bookings.points_used IS 'Loyalty points used for discount';
 COMMENT ON COLUMN bookings.points_earned IS 'Loyalty points earned from this booking';
-COMMENT ON COLUMN bookings.status IS 'PENDING, CONFIRMED, CANCELLED, FAILED, REFUNDED';
+COMMENT ON COLUMN bookings.booking_code IS 'Unique booking reference code';
+COMMENT ON COLUMN bookings.expires_at IS 'Expiration time for pending bookings';
+COMMENT ON COLUMN bookings.status IS 'PENDING, CONFIRMED, CANCELLED, EXPIRED';
 COMMENT ON COLUMN bookings.qr_code IS 'Base64 encoded QR code for ticket verification';
 ```
 
@@ -651,12 +685,14 @@ Lưu chi tiết ghế đã đặt trong mỗi booking.
 
 ```sql
 CREATE TABLE booking_seats (
-    booking_seat_id BIGSERIAL PRIMARY KEY,
-    booking_id BIGINT NOT NULL REFERENCES bookings(booking_id) ON DELETE CASCADE,
-    show_seat_id BIGINT NOT NULL REFERENCES show_seats(show_seat_id) ON DELETE RESTRICT,
+    id BIGSERIAL PRIMARY KEY,
+    booking_code VARCHAR(20) NOT NULL UNIQUE,
+    booking_id BIGINT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    show_seat_id BIGINT NOT NULL REFERENCES show_seats(id) ON DELETE RESTRICT,
     price DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    confirmed_at TIMESTAMP,
     CONSTRAINT booking_seats_price_positive CHECK (price > 0),
     UNIQUE (booking_id, show_seat_id)
 );
@@ -679,7 +715,7 @@ Lưu danh mục thể loại phim.
 
 ```sql
 CREATE TABLE genres (
-    genre_id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     slug VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
@@ -716,8 +752,8 @@ Junction table cho many-to-many relationship giữa Movies và Genres.
 
 ```sql
 CREATE TABLE movie_genres (
-    movie_id BIGINT NOT NULL REFERENCES movies(movie_id) ON DELETE CASCADE,
-    genre_id INTEGER NOT NULL REFERENCES genres(genre_id) ON DELETE CASCADE,
+    movie_id BIGINT NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+    genre_id INTEGER NOT NULL REFERENCES genres(id) ON DELETE CASCADE,
     PRIMARY KEY (movie_id, genre_id)
 );
 
@@ -737,46 +773,37 @@ Lưu thông tin thanh toán chi tiết cho mỗi booking.
 
 ```sql
 CREATE TABLE payments (
-    payment_id BIGSERIAL PRIMARY KEY,
-    booking_id BIGINT NOT NULL REFERENCES bookings(booking_id) ON DELETE RESTRICT,
+    id BIGSERIAL PRIMARY KEY,
+    booking_id BIGINT NOT NULL REFERENCES bookings(id) ON DELETE RESTRICT,
     payment_method VARCHAR(50) NOT NULL,
-    payment_provider VARCHAR(50) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'VND',
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    transaction_id VARCHAR(255),
-    provider_transaction_id VARCHAR(255),
     payment_url TEXT,
-    request_data JSONB,
-    response_data JSONB,
-    callback_data JSONB,
+    callback_data TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
     paid_at TIMESTAMP,
-    expired_at TIMESTAMP,
-    refund_id VARCHAR(255),
-    refund_amount DECIMAL(10, 2),
-    refunded_at TIMESTAMP,
-    error_code VARCHAR(50),
-    error_message TEXT,
+    failed_at TIMESTAMP,
+    failure_reason TEXT,
 
     CONSTRAINT payments_amount_positive CHECK (amount > 0),
-    CONSTRAINT payments_status_valid CHECK (status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED', 'REFUNDED', 'EXPIRED')),
-    CONSTRAINT payments_method_valid CHECK (payment_method IN ('VNPAY', 'MOMO', 'ZALOPAY', 'CARD', 'CASH', 'BANK_TRANSFER')),
-    CONSTRAINT payments_provider_valid CHECK (payment_provider IN ('VNPAY', 'MOMO', 'ZALOPAY', 'STRIPE', 'INTERNAL'))
+    CONSTRAINT payments_status_valid CHECK (status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED')),
+    CONSTRAINT payments_method_valid CHECK (payment_method IN ('VNPAY', 'MOMO', 'ZALOPAY', 'CASH')),
 );
 
 -- Indexes
 CREATE INDEX idx_payments_booking_id ON payments(booking_id);
 CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_payments_transaction_id ON payments(transaction_id);
-CREATE INDEX idx_payments_provider_transaction_id ON payments(provider_transaction_id);
 CREATE INDEX idx_payments_booking_status ON payments(booking_id, status);
 
 -- Comments
 COMMENT ON TABLE payments IS 'Payment transactions for bookings';
-COMMENT ON COLUMN payments.payment_method IS 'VNPAY, MOMO, ZALOPAY, CARD, CASH, BANK_TRANSFER';
-COMMENT ON COLUMN payments.payment_provider IS 'Payment gateway: VNPAY, MOMO, ZALOPAY, STRIPE, INTERNAL';
+COMMENT ON COLUMN payments.payment_method IS 'Payment method: VNPAY, MOMO, ZALOPAY, CASH';
+COMMENT ON COLUMN payments.callback_data IS 'Payment gateway callback data stored as TEXT';
+COMMENT ON COLUMN payments.failed_at IS 'Timestamp when payment failed';
+COMMENT ON COLUMN payments.failure_reason IS 'Reason for payment failure';
 ```
 
 **Trigger cập nhật booking khi payment hoàn thành:**
@@ -786,13 +813,13 @@ CREATE OR REPLACE FUNCTION update_booking_on_payment()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.status = 'COMPLETED' AND OLD.status != 'COMPLETED' THEN
-        UPDATE bookings SET status = 'CONFIRMED', paid_at = NEW.paid_at
-        WHERE booking_id = NEW.booking_id;
+        UPDATE bookings SET status = 'CONFIRMED', confirmed_at = NEW.paid_at
+        WHERE id = NEW.booking_id;
         UPDATE show_seats ss SET status = 'SOLD'
         FROM booking_seats bs WHERE bs.booking_id = NEW.booking_id AND ss.show_seat_id = bs.show_seat_id;
     END IF;
     IF NEW.status IN ('FAILED', 'EXPIRED') AND OLD.status = 'PENDING' THEN
-        UPDATE bookings SET status = 'FAILED' WHERE booking_id = NEW.booking_id;
+        UPDATE bookings SET status = 'EXPIRED' WHERE id = NEW.booking_id;
         UPDATE show_seats ss SET status = 'AVAILABLE', locked_by = NULL
         FROM booking_seats bs WHERE bs.booking_id = NEW.booking_id AND ss.show_seat_id = bs.show_seat_id;
     END IF;
@@ -817,7 +844,7 @@ EXECUTE FUNCTION update_booking_on_payment();
 ```sql
 ALTER TABLE bookings
 ADD CONSTRAINT fk_bookings_user
-FOREIGN KEY (user_id) REFERENCES users(user_id)
+FOREIGN KEY (user_id) REFERENCES users(id)
 ON DELETE RESTRICT  -- Cannot delete user if they have bookings
 ON UPDATE CASCADE;
 ```
@@ -826,7 +853,7 @@ ON UPDATE CASCADE;
 ```sql
 ALTER TABLE bookings
 ADD CONSTRAINT fk_bookings_show
-FOREIGN KEY (show_id) REFERENCES shows(show_id)
+FOREIGN KEY (show_id) REFERENCES shows(id)
 ON DELETE RESTRICT  -- Cannot delete show if it has bookings
 ON UPDATE CASCADE;
 ```
@@ -835,7 +862,7 @@ ON UPDATE CASCADE;
 ```sql
 ALTER TABLE shows
 ADD CONSTRAINT fk_shows_movie
-FOREIGN KEY (movie_id) REFERENCES movies(movie_id)
+FOREIGN KEY (movie_id) REFERENCES movies(id)
 ON DELETE RESTRICT  -- Cannot delete movie if it has scheduled shows
 ON UPDATE CASCADE;
 ```
@@ -844,7 +871,7 @@ ON UPDATE CASCADE;
 ```sql
 ALTER TABLE shows
 ADD CONSTRAINT fk_shows_hall
-FOREIGN KEY (hall_id) REFERENCES halls(hall_id)
+FOREIGN KEY (hall_id) REFERENCES halls(id)
 ON DELETE CASCADE  -- If hall deleted, all its shows are deleted
 ON UPDATE CASCADE;
 ```
@@ -853,7 +880,7 @@ ON UPDATE CASCADE;
 ```sql
 ALTER TABLE halls
 ADD CONSTRAINT fk_halls_cinema
-FOREIGN KEY (cinema_id) REFERENCES cinemas(cinema_id)
+FOREIGN KEY (cinema_id) REFERENCES cinemas(id)
 ON DELETE CASCADE  -- If cinema deleted, all its halls are deleted
 ON UPDATE CASCADE;
 ```
@@ -862,7 +889,7 @@ ON UPDATE CASCADE;
 ```sql
 ALTER TABLE seats
 ADD CONSTRAINT fk_seats_hall
-FOREIGN KEY (hall_id) REFERENCES halls(hall_id)
+FOREIGN KEY (hall_id) REFERENCES halls(id)
 ON DELETE CASCADE  -- If hall deleted, all its seats are deleted
 ON UPDATE CASCADE;
 ```
@@ -871,12 +898,12 @@ ON UPDATE CASCADE;
 ```sql
 ALTER TABLE show_seats
 ADD CONSTRAINT fk_show_seats_show
-FOREIGN KEY (show_id) REFERENCES shows(show_id)
+FOREIGN KEY (show_id) REFERENCES shows(id)
 ON DELETE CASCADE;  -- If show deleted, all seat allocations deleted
 
 ALTER TABLE show_seats
 ADD CONSTRAINT fk_show_seats_seat
-FOREIGN KEY (seat_id) REFERENCES seats(seat_id)
+FOREIGN KEY (seat_id) REFERENCES seats(id)
 ON DELETE CASCADE;  -- If seat deleted, all allocations deleted
 ```
 
@@ -884,12 +911,12 @@ ON DELETE CASCADE;  -- If seat deleted, all allocations deleted
 ```sql
 ALTER TABLE booking_seats
 ADD CONSTRAINT fk_booking_seats_booking
-FOREIGN KEY (booking_id) REFERENCES bookings(booking_id)
+FOREIGN KEY (booking_id) REFERENCES bookings(id)
 ON DELETE CASCADE;  -- If booking deleted, all seat links deleted
 
 ALTER TABLE booking_seats
 ADD CONSTRAINT fk_booking_seats_show_seat
-FOREIGN KEY (show_seat_id) REFERENCES show_seats(show_seat_id)
+FOREIGN KEY (show_seat_id) REFERENCES show_seats(id)
 ON DELETE RESTRICT;  -- Cannot delete show_seat if it's booked
 ```
 
@@ -909,7 +936,7 @@ ADD CONSTRAINT uq_halls_cinema_name UNIQUE (cinema_id, name);
 
 -- No duplicate seat positions within same hall
 ALTER TABLE seats
-ADD CONSTRAINT uq_seats_hall_position UNIQUE (hall_id, row_number, seat_number);
+ADD CONSTRAINT uq_seats_hall_position UNIQUE (hall_id, row_name, seat_number);
 
 -- No duplicate seat in same show
 ALTER TABLE show_seats
@@ -1020,7 +1047,7 @@ BEGIN
     SELECT COALESCE(SUM(price), 0)
     INTO seats_total
     FROM booking_seats
-    WHERE booking_id = NEW.booking_id;
+    WHERE id = NEW.booking_id;
 
     NEW.total_amount := seats_total;
 
@@ -1060,14 +1087,14 @@ BEGIN
     IF NEW.status = 'CONFIRMED' AND OLD.status != 'CONFIRMED' THEN
         UPDATE users
         SET points = points + NEW.points_earned - NEW.points_used
-        WHERE user_id = NEW.user_id;
+        WHERE id = NEW.user_id;
     END IF;
 
     -- Booking cancelled: refund used points, deduct earned points
     IF NEW.status = 'CANCELLED' AND OLD.status = 'CONFIRMED' THEN
         UPDATE users
         SET points = points - NEW.points_earned + NEW.points_used
-        WHERE user_id = NEW.user_id;
+        WHERE id = NEW.user_id;
     END IF;
 
     RETURN NEW;
@@ -1142,15 +1169,15 @@ Tất cả các bảng đều có PRIMARY KEY index (tự động tạo):
 
 ```sql
 -- Automatically created by PRIMARY KEY constraint
-CREATE UNIQUE INDEX users_pkey ON users(user_id);
-CREATE UNIQUE INDEX movies_pkey ON movies(movie_id);
-CREATE UNIQUE INDEX cinemas_pkey ON cinemas(cinema_id);
-CREATE UNIQUE INDEX halls_pkey ON halls(hall_id);
-CREATE UNIQUE INDEX seats_pkey ON seats(seat_id);
-CREATE UNIQUE INDEX shows_pkey ON shows(show_id);
-CREATE UNIQUE INDEX show_seats_pkey ON show_seats(show_seat_id);
-CREATE UNIQUE INDEX bookings_pkey ON bookings(booking_id);
-CREATE UNIQUE INDEX booking_seats_pkey ON booking_seats(booking_seat_id);
+CREATE UNIQUE INDEX users_pkey ON users(id);
+CREATE UNIQUE INDEX movies_pkey ON movies(id);
+CREATE UNIQUE INDEX cinemas_pkey ON cinemas(id);
+CREATE UNIQUE INDEX halls_pkey ON halls(id);
+CREATE UNIQUE INDEX seats_pkey ON seats(id);
+CREATE UNIQUE INDEX shows_pkey ON shows(id);
+CREATE UNIQUE INDEX show_seats_pkey ON show_seats(id);
+CREATE UNIQUE INDEX bookings_pkey ON bookings(id);
+CREATE UNIQUE INDEX booking_seats_pkey ON booking_seats(id);
 ```
 
 ### 5.4.2 Foreign Key Indexes
