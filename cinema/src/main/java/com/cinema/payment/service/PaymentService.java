@@ -11,6 +11,8 @@ import com.cinema.payment.dto.*;
 import com.cinema.shared.exception.BusinessException;
 import com.cinema.shared.exception.ErrorCode;
 import com.cinema.shared.service.EmailService;
+import com.cinema.shared.service.KafkaProducerService;
+import com.cinema.shared.service.QRCodeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Payment Service
@@ -35,6 +37,8 @@ public class PaymentService {
     private final BookingRepository bookingRepository;
     private final VNPayService vnPayService;
     private final EmailService emailService;
+    private final QRCodeService qrCodeService;
+    private final KafkaProducerService kafkaProducerService;
     private final ObjectMapper objectMapper;
 
     /**
@@ -249,15 +253,53 @@ public class PaymentService {
         payment.complete(transactionId);
         paymentRepository.save(payment);
 
-        // Update booking status
-        booking.confirm();
-        bookingRepository.save(booking);
+        // Get full booking details for QR code
+        Booking fullBooking = bookingRepository.findByIdWithDetails(booking.getId())
+                .orElse(booking);
 
-        // Send confirmation email
-        sendPaymentConfirmationEmail(booking, payment);
+        // Generate QR code
+        String qrCode = generateBookingQRCode(fullBooking);
+        fullBooking.setQrCode(qrCode);
+
+        // Update booking status
+        fullBooking.confirm();
+        bookingRepository.save(fullBooking);
+
+        // Send confirmation email with QR code
+        sendPaymentConfirmationEmail(fullBooking, payment);
+
+        // Publish payment completed event to Kafka
+        kafkaProducerService.publishPaymentCompleted(payment, fullBooking);
 
         log.info("Payment completed successfully: {} for booking: {}",
                 payment.getId(), booking.getBookingCode());
+    }
+
+    /**
+     * Generate QR code for booking
+     */
+    private String generateBookingQRCode(Booking booking) {
+        try {
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+            String seats = booking.getBookingSeats().stream()
+                    .map(bs -> bs.getShowSeat().getSeat().getRowName() + bs.getShowSeat().getSeat().getSeatNumber())
+                    .collect(Collectors.joining(", "));
+
+            return qrCodeService.generateFullBookingQRCode(
+                    booking.getBookingCode(),
+                    booking.getShow().getMovie().getTitle(),
+                    booking.getShow().getShowDate().format(dateFormatter),
+                    booking.getShow().getStartTime().format(timeFormatter),
+                    seats,
+                    booking.getShow().getHall().getCinema().getName()
+            );
+        } catch (Exception e) {
+            log.error("Failed to generate QR code for booking: {}", booking.getBookingCode(), e);
+            // Fallback to simple QR code with just booking code
+            return qrCodeService.generateBookingQRCode(booking.getBookingCode());
+        }
     }
 
     /**
@@ -270,6 +312,9 @@ public class PaymentService {
         payment.fail(reason);
         paymentRepository.save(payment);
 
+        // Publish payment failed event to Kafka
+        kafkaProducerService.publishPaymentFailed(payment, booking, reason);
+
         log.info("Payment failed: {} for booking: {} reason: {}",
                 payment.getId(), booking.getBookingCode(), reason);
     }
@@ -279,25 +324,26 @@ public class PaymentService {
      */
     private void sendPaymentConfirmationEmail(Booking booking, Payment payment) {
         try {
-            // Get booking details
-            Booking fullBooking = bookingRepository.findByIdWithDetails(booking.getId())
-                    .orElse(booking);
-
             DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
+            // Get actual seats
+            String seats = booking.getBookingSeats().stream()
+                    .map(bs -> bs.getShowSeat().getSeat().getRowName() + bs.getShowSeat().getSeat().getSeatNumber())
+                    .collect(Collectors.joining(", "));
+
             emailService.sendBookingConfirmation(
-                    fullBooking.getUser().getEmail(),
-                    fullBooking.getUser().getFullName(),
-                    fullBooking.getBookingCode(),
-                    fullBooking.getShow().getMovie().getTitle(),
-                    fullBooking.getShow().getShowDate().format(dateFormatter),
-                    fullBooking.getShow().getStartTime().format(timeFormatter),
-                    fullBooking.getShow().getHall().getCinema().getName(),
-                    fullBooking.getShow().getHall().getName(),
-                    "Seats info", // TODO: Get actual seats
+                    booking.getUser().getEmail(),
+                    booking.getUser().getFullName(),
+                    booking.getBookingCode(),
+                    booking.getShow().getMovie().getTitle(),
+                    booking.getShow().getShowDate().format(dateFormatter),
+                    booking.getShow().getStartTime().format(timeFormatter),
+                    booking.getShow().getHall().getCinema().getName(),
+                    booking.getShow().getHall().getName(),
+                    seats,
                     payment.getAmount().toString() + " VND",
-                    null // TODO: Generate QR code
+                    booking.getQrCode()
             );
 
             log.info("Payment confirmation email sent for booking: {}", booking.getBookingCode());

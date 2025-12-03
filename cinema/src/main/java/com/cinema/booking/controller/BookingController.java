@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import com.cinema.user.entity.User;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -109,5 +111,35 @@ public class BookingController {
         Page<BookingResponse> bookings = bookingService.getUserBookings(user.getId(), pageable);
 
         return ResponseEntity.ok(ApiResponse.success(bookings));
+    }
+
+    @GetMapping("/code/{bookingCode}/qr")
+    @Operation(summary = "Get booking QR code",
+            description = "Get QR code image for a confirmed booking")
+    public ResponseEntity<byte[]> getBookingQRCode(@PathVariable String bookingCode) {
+        byte[] qrCode = bookingService.getBookingQRCodeImage(bookingCode);
+
+        if (qrCode == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_PNG);
+        headers.setContentLength(qrCode.length);
+
+        return new ResponseEntity<>(qrCode, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/code/{bookingCode}/qr-base64")
+    @Operation(summary = "Get booking QR code as Base64",
+            description = "Get QR code as Base64 string for a confirmed booking")
+    public ResponseEntity<ApiResponse<String>> getBookingQRCodeBase64(@PathVariable String bookingCode) {
+        String qrCode = bookingService.getBookingQRCodeBase64(bookingCode);
+
+        if (qrCode == null) {
+            return ResponseEntity.ok(ApiResponse.success(null, "QR code not available"));
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(qrCode, "QR code retrieved"));
     }
 }

@@ -1,5 +1,6 @@
 package com.cinema.user.service;
 
+import com.cinema.shared.config.RedisConfig;
 import com.cinema.shared.exception.BusinessException;
 import com.cinema.shared.exception.ErrorCode;
 import com.cinema.user.dto.*;
@@ -7,6 +8,9 @@ import com.cinema.user.entity.User;
 import com.cinema.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,12 +26,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Cacheable(value = RedisConfig.CACHE_USER_DETAIL, key = "#id")
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         return toUserResponse(user);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_USERS, key = "'username:' + #username")
     public UserResponse getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -35,6 +41,10 @@ public class UserService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisConfig.CACHE_USER_DETAIL, key = "#userId"),
+            @CacheEvict(value = RedisConfig.CACHE_USERS, allEntries = true)
+    })
     public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -75,6 +85,10 @@ public class UserService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisConfig.CACHE_USER_DETAIL, key = "#userId"),
+            @CacheEvict(value = RedisConfig.CACHE_USERS, allEntries = true)
+    })
     public UserResponse adminUpdateUser(Long userId, AdminUpdateUserRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -101,6 +115,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = RedisConfig.CACHE_USER_DETAIL, key = "#userId")
     public void addPoints(Long userId, int points) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -110,6 +125,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = RedisConfig.CACHE_USER_DETAIL, key = "#userId")
     public void deductPoints(Long userId, int points) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));

@@ -22,6 +22,8 @@ import com.cinema.user.entity.User;
 import com.cinema.user.repository.UserRepository;
 import com.cinema.shared.service.RedisLockService;
 import com.cinema.shared.service.KafkaProducerService;
+import com.cinema.shared.service.QRCodeService;
+import com.google.zxing.WriterException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,12 +32,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +55,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final RedisLockService redisLockService;
     private final KafkaProducerService kafkaProducerService;
+    private final QRCodeService qrCodeService;
 
     // Booking expires after 15 minutes
     private static final int BOOKING_EXPIRY_MINUTES = 15;
@@ -439,11 +444,81 @@ public class BookingService {
     }
 
     private String generateQRCode(Booking booking) {
-        // Placeholder - will generate actual QR code
-        return String.format("QR:%s|%s|%d|%s",
-                booking.getBookingCode(),
-                booking.getShow().getMovie().getTitle(),
-                booking.getSeatCount(),
-                booking.getShow().getShowDate());
+        try {
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+            String seats = booking.getBookingSeats().stream()
+                    .map(bs -> bs.getShowSeat().getSeat().getRowName() + bs.getShowSeat().getSeat().getSeatNumber())
+                    .collect(Collectors.joining(", "));
+
+            return qrCodeService.generateFullBookingQRCode(
+                    booking.getBookingCode(),
+                    booking.getShow().getMovie().getTitle(),
+                    booking.getShow().getShowDate().format(dateFormatter),
+                    booking.getShow().getStartTime().format(timeFormatter),
+                    seats,
+                    booking.getShow().getHall().getCinema().getName()
+            );
+        } catch (Exception e) {
+            log.error("Failed to generate QR code for booking: {}", booking.getBookingCode(), e);
+            // Fallback to simple QR code with just booking code
+            return qrCodeService.generateBookingQRCode(booking.getBookingCode());
+        }
+    }
+
+    /**
+     * Get QR code image for a booking
+     * @param bookingCode The booking code
+     * @return QR code as PNG byte array, or null if not available
+     */
+    public byte[] getBookingQRCodeImage(String bookingCode) {
+        Booking booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
+
+        // Only return QR for confirmed bookings
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            return null;
+        }
+
+        // If QR code is stored as base64, decode it
+        if (booking.getQrCode() != null && !booking.getQrCode().isEmpty()) {
+            try {
+                return java.util.Base64.getDecoder().decode(booking.getQrCode());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid base64 QR code for booking: {}", bookingCode);
+            }
+        }
+
+        // Generate QR code on-the-fly if not stored
+        try {
+            return qrCodeService.generateQRCodeBytes(bookingCode, 300, 300);
+        } catch (WriterException | IOException e) {
+            log.error("Failed to generate QR code image for booking: {}", bookingCode, e);
+            return null;
+        }
+    }
+
+    /**
+     * Get QR code as Base64 string for a booking
+     * @param bookingCode The booking code
+     * @return QR code as Base64 string, or null if not available
+     */
+    public String getBookingQRCodeBase64(String bookingCode) {
+        Booking booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
+
+        // Only return QR for confirmed bookings
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            return null;
+        }
+
+        // Return stored QR code if available
+        if (booking.getQrCode() != null && !booking.getQrCode().isEmpty()) {
+            return booking.getQrCode();
+        }
+
+        // Generate on-the-fly
+        return qrCodeService.generateBookingQRCode(bookingCode);
     }
 }

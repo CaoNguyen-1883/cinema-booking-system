@@ -1,9 +1,11 @@
 package com.cinema.shared.service;
 
 import com.cinema.booking.entity.Booking;
+import com.cinema.booking.entity.Payment;
 import com.cinema.shared.config.KafkaConfig;
 import com.cinema.shared.event.BookingEvent;
 import com.cinema.shared.event.NotificationEvent;
+import com.cinema.shared.event.PaymentEvent;
 import com.cinema.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +77,31 @@ public class KafkaProducerService {
     }
 
     /**
+     * Publish payment completed event
+     */
+    public void publishPaymentCompleted(Payment payment, Booking booking) {
+        PaymentEvent event = buildPaymentEvent(payment, booking, PaymentEvent.TYPE_COMPLETED);
+        sendEvent(KafkaConfig.TOPIC_PAYMENT_COMPLETED, booking.getBookingCode(), event);
+
+        // Also send notification event
+        sendPaymentNotification(payment, booking, NotificationEvent.TEMPLATE_PAYMENT_SUCCESS,
+                "Thanh toán thành công! Vé của bạn đã được xác nhận.");
+    }
+
+    /**
+     * Publish payment failed event
+     */
+    public void publishPaymentFailed(Payment payment, Booking booking, String reason) {
+        PaymentEvent event = buildPaymentEvent(payment, booking, PaymentEvent.TYPE_FAILED);
+        event.getPayment().setFailureReason(reason);
+        sendEvent(KafkaConfig.TOPIC_PAYMENT_FAILED, booking.getBookingCode(), event);
+
+        // Also send notification event
+        sendPaymentNotification(payment, booking, NotificationEvent.TEMPLATE_PAYMENT_FAILED,
+                "Thanh toán thất bại: " + reason + ". Vui lòng thử lại.");
+    }
+
+    /**
      * Send notification event
      */
     private void sendBookingNotification(Booking booking, String template, String message) {
@@ -104,6 +131,90 @@ public class KafkaProducerService {
                 .build();
 
         sendEvent(KafkaConfig.TOPIC_NOTIFICATION, user.getId().toString(), notification);
+    }
+
+    /**
+     * Send payment notification event
+     */
+    private void sendPaymentNotification(Payment payment, Booking booking, String template, String message) {
+        User user = booking.getUser();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("bookingCode", booking.getBookingCode());
+        data.put("message", message);
+        data.put("paymentMethod", payment.getPaymentMethod().name());
+        data.put("amount", payment.getAmount());
+        data.put("transactionId", payment.getTransactionId());
+        data.put("movieTitle", booking.getShow() != null && booking.getShow().getMovie() != null ?
+                booking.getShow().getMovie().getTitle() : "N/A");
+        data.put("showDate", booking.getShow() != null ? booking.getShow().getShowDate().toString() : "N/A");
+        data.put("showTime", booking.getShow() != null ? booking.getShow().getStartTime().toString() : "N/A");
+        data.put("qrCode", booking.getQrCode());
+
+        NotificationEvent notification = NotificationEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .timestamp(LocalDateTime.now())
+                .type(NotificationEvent.NotificationType.EMAIL)
+                .templateName(template)
+                .recipient(NotificationEvent.RecipientData.builder()
+                        .userId(user.getId())
+                        .email(user.getEmail())
+                        .phoneNumber(user.getPhoneNumber())
+                        .build())
+                .data(data)
+                .build();
+
+        sendEvent(KafkaConfig.TOPIC_NOTIFICATION, user.getId().toString(), notification);
+    }
+
+    /**
+     * Build payment event from entities
+     */
+    private PaymentEvent buildPaymentEvent(Payment payment, Booking booking, String eventType) {
+        User user = booking.getUser();
+
+        // Build payment data
+        PaymentEvent.PaymentData paymentData = PaymentEvent.PaymentData.builder()
+                .paymentId(payment.getId())
+                .paymentMethod(payment.getPaymentMethod().name())
+                .status(payment.getStatus().name())
+                .amount(payment.getAmount())
+                .transactionId(payment.getTransactionId())
+                .paidAt(payment.getPaidAt())
+                .build();
+
+        // Build booking data
+        PaymentEvent.BookingData bookingData = PaymentEvent.BookingData.builder()
+                .bookingId(booking.getId())
+                .bookingCode(booking.getBookingCode())
+                .status(booking.getStatus().name())
+                .movieTitle(booking.getShow() != null && booking.getShow().getMovie() != null ?
+                        booking.getShow().getMovie().getTitle() : null)
+                .cinemaName(booking.getShow() != null && booking.getShow().getHall() != null &&
+                        booking.getShow().getHall().getCinema() != null ?
+                        booking.getShow().getHall().getCinema().getName() : null)
+                .showDate(booking.getShow() != null ? booking.getShow().getShowDate().toString() : null)
+                .showTime(booking.getShow() != null ? booking.getShow().getStartTime().toString() : null)
+                .seatCount(booking.getSeatCount())
+                .build();
+
+        // Build user data
+        PaymentEvent.UserData userData = PaymentEvent.UserData.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phoneNumber(user.getPhoneNumber())
+                .build();
+
+        return PaymentEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType(eventType)
+                .timestamp(LocalDateTime.now())
+                .payment(paymentData)
+                .booking(bookingData)
+                .user(userData)
+                .build();
     }
 
     /**

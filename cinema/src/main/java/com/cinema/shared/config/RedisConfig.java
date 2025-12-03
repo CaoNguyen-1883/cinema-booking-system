@@ -29,6 +29,11 @@ public class RedisConfig {
     public static final String CACHE_GENRES = "genres";
     public static final String CACHE_SHOWS = "shows";
     public static final String CACHE_SHOW_SEATS = "show_seats";
+    public static final String CACHE_USERS = "users";
+    public static final String CACHE_USER_DETAIL = "user_detail";
+    public static final String CACHE_HALLS = "halls";
+    public static final String CACHE_HALL_DETAIL = "hall_detail";
+    public static final String CACHE_SEATS = "seats";
 
     @Bean
     @Primary
@@ -71,6 +76,17 @@ public class RedisConfig {
 
         // Show seats cache - 30 seconds (seats availability changes frequently)
         cacheConfigurations.put(CACHE_SHOW_SEATS, defaultConfig.entryTtl(Duration.ofSeconds(30)));
+
+        // Users cache - 15 minutes (user profile changes occasionally)
+        cacheConfigurations.put(CACHE_USERS, defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put(CACHE_USER_DETAIL, defaultConfig.entryTtl(Duration.ofMinutes(15)));
+
+        // Halls cache - 1 hour (halls configuration rarely changes)
+        cacheConfigurations.put(CACHE_HALLS, defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put(CACHE_HALL_DETAIL, defaultConfig.entryTtl(Duration.ofHours(1)));
+
+        // Seats cache - 30 minutes (seat layout rarely changes)
+        cacheConfigurations.put(CACHE_SEATS, defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

@@ -10,10 +10,14 @@ import com.cinema.cinema.entity.Seat.SeatType;
 import com.cinema.cinema.repository.CinemaRepository;
 import com.cinema.cinema.repository.HallRepository;
 import com.cinema.cinema.repository.SeatRepository;
+import com.cinema.shared.config.RedisConfig;
 import com.cinema.shared.exception.BusinessException;
 import com.cinema.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,18 +35,21 @@ public class HallService {
     private final CinemaRepository cinemaRepository;
     private final SeatRepository seatRepository;
 
+    @Cacheable(value = RedisConfig.CACHE_HALL_DETAIL, key = "#id")
     public HallResponse getHallById(Long id) {
         Hall hall = hallRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HALL_NOT_FOUND));
         return HallResponse.fromEntity(hall);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_HALL_DETAIL, key = "'withSeats:' + #id")
     public HallResponse getHallByIdWithSeats(Long id) {
         Hall hall = hallRepository.findByIdWithSeats(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HALL_NOT_FOUND));
         return HallResponse.fromEntityWithSeats(hall);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_HALLS, key = "'cinema:' + #cinemaId")
     public List<HallResponse> getHallsByCinemaId(Long cinemaId) {
         return hallRepository.findByCinemaId(cinemaId)
                 .stream()
@@ -50,6 +57,7 @@ public class HallService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = RedisConfig.CACHE_HALLS, key = "'cinema:' + #cinemaId + ':active'")
     public List<HallResponse> getActiveHallsByCinemaId(Long cinemaId) {
         return hallRepository.findActiveHallsByCinemaId(cinemaId)
                 .stream()
@@ -57,6 +65,7 @@ public class HallService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = RedisConfig.CACHE_SEATS, key = "'hall:' + #hallId")
     public List<SeatResponse> getSeatsByHallId(Long hallId) {
         Hall hall = hallRepository.findById(hallId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HALL_NOT_FOUND));
@@ -66,6 +75,7 @@ public class HallService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = RedisConfig.CACHE_SEATS, key = "'hall:' + #hallId + ':active'")
     public List<SeatResponse> getActiveSeatsByHallId(Long hallId) {
         Hall hall = hallRepository.findById(hallId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HALL_NOT_FOUND));
@@ -76,6 +86,10 @@ public class HallService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisConfig.CACHE_HALLS, key = "'cinema:' + #cinemaId"),
+            @CacheEvict(value = RedisConfig.CACHE_HALLS, key = "'cinema:' + #cinemaId + ':active'")
+    })
     public HallResponse createHall(Long cinemaId, CreateHallRequest request) {
         Cinema cinema = cinemaRepository.findById(cinemaId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CINEMA_NOT_FOUND));
@@ -144,6 +158,11 @@ public class HallService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisConfig.CACHE_HALL_DETAIL, key = "#hallId"),
+            @CacheEvict(value = RedisConfig.CACHE_HALL_DETAIL, key = "'withSeats:' + #hallId"),
+            @CacheEvict(value = RedisConfig.CACHE_HALLS, allEntries = true)
+    })
     public HallResponse updateHall(Long hallId, UpdateHallRequest request) {
         Hall hall = hallRepository.findById(hallId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HALL_NOT_FOUND));
@@ -170,6 +189,13 @@ public class HallService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisConfig.CACHE_HALL_DETAIL, key = "#hallId"),
+            @CacheEvict(value = RedisConfig.CACHE_HALL_DETAIL, key = "'withSeats:' + #hallId"),
+            @CacheEvict(value = RedisConfig.CACHE_HALLS, allEntries = true),
+            @CacheEvict(value = RedisConfig.CACHE_SEATS, key = "'hall:' + #hallId"),
+            @CacheEvict(value = RedisConfig.CACHE_SEATS, key = "'hall:' + #hallId + ':active'")
+    })
     public void deleteHall(Long hallId) {
         Hall hall = hallRepository.findById(hallId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HALL_NOT_FOUND));
@@ -182,6 +208,11 @@ public class HallService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = RedisConfig.CACHE_HALL_DETAIL, key = "'withSeats:' + #hallId"),
+            @CacheEvict(value = RedisConfig.CACHE_SEATS, key = "'hall:' + #hallId"),
+            @CacheEvict(value = RedisConfig.CACHE_SEATS, key = "'hall:' + #hallId + ':active'")
+    })
     public void regenerateSeats(Long hallId) {
         Hall hall = hallRepository.findById(hallId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.HALL_NOT_FOUND));
