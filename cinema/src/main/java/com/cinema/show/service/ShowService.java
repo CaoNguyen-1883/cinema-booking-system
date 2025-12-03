@@ -6,6 +6,7 @@ import com.cinema.cinema.repository.HallRepository;
 import com.cinema.cinema.repository.SeatRepository;
 import com.cinema.movie.entity.Movie;
 import com.cinema.movie.repository.MovieRepository;
+import com.cinema.shared.config.RedisConfig;
 import com.cinema.shared.exception.BusinessException;
 import com.cinema.shared.exception.ErrorCode;
 import com.cinema.show.dto.*;
@@ -17,6 +18,9 @@ import com.cinema.show.repository.ShowRepository;
 import com.cinema.show.repository.ShowSeatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,19 +53,25 @@ public class ShowService {
     // Weekend price increase
     private static final BigDecimal WEEKEND_PRICE_INCREASE = new BigDecimal("30000");
 
+    @Cacheable(value = RedisConfig.CACHE_SHOWS, key = "#id")
     public ShowResponse getShowById(Long id) {
+        log.debug("Fetching show {} from database", id);
         Show show = showRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SHOW_NOT_FOUND));
         return ShowResponse.fromEntity(show);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_SHOWS, key = "'withSeats:' + #id")
     public ShowResponse getShowByIdWithSeats(Long id) {
+        log.debug("Fetching show {} with seats from database", id);
         Show show = showRepository.findByIdWithSeats(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SHOW_NOT_FOUND));
         return ShowResponse.fromEntityWithSeats(show);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_SHOW_SEATS, key = "#showId")
     public List<ShowSeatResponse> getShowSeats(Long showId) {
+        log.debug("Fetching seats for show {} from database", showId);
         // Verify show exists
         if (!showRepository.existsById(showId)) {
             throw new BusinessException(ErrorCode.SHOW_NOT_FOUND);
@@ -111,6 +121,7 @@ public class ShowService {
     }
 
     @Transactional
+    @CacheEvict(value = RedisConfig.CACHE_SHOWS, allEntries = true)
     public ShowResponse createShow(CreateShowRequest request) {
         // Get movie
         Movie movie = movieRepository.findById(request.getMovieId())
@@ -199,6 +210,11 @@ public class ShowService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_SHOWS, key = "#showId"),
+        @CacheEvict(value = RedisConfig.CACHE_SHOWS, key = "'withSeats:' + #showId"),
+        @CacheEvict(value = RedisConfig.CACHE_SHOW_SEATS, key = "#showId")
+    })
     public ShowResponse updateShow(Long showId, UpdateShowRequest request) {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SHOW_NOT_FOUND));
@@ -298,6 +314,11 @@ public class ShowService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_SHOWS, key = "#showId"),
+        @CacheEvict(value = RedisConfig.CACHE_SHOWS, key = "'withSeats:' + #showId"),
+        @CacheEvict(value = RedisConfig.CACHE_SHOW_SEATS, key = "#showId")
+    })
     public void cancelShow(Long showId) {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SHOW_NOT_FOUND));
@@ -323,6 +344,11 @@ public class ShowService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_SHOWS, key = "#showId"),
+        @CacheEvict(value = RedisConfig.CACHE_SHOWS, key = "'withSeats:' + #showId"),
+        @CacheEvict(value = RedisConfig.CACHE_SHOW_SEATS, key = "#showId")
+    })
     public void deleteShow(Long showId) {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SHOW_NOT_FOUND));

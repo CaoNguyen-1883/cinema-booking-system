@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dat ve thanh cong - Cho thanh toan</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+            <td style="background-color: #e50914; padding: 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Cinema Booking</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px;">
+                <h2 style="color: #333333; margin-top: 0;">Dat ve thanh cong!</h2>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Xin chao <strong th:text="${customerName}">Khach hang</strong>,
+                </p>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Ban da dat ve thanh cong. Vui long thanh toan de hoan tat.
+                </p>
+
+                <table width="100%" cellpadding="15" cellspacing="0" style="background-color: #f9f9f9; border-radius: 8px; margin: 20px 0;">
+                    <tr>
+                        <td>
+                            <table width="100%" cellpadding="5" cellspacing="0">
+                                <tr>
+                                    <td style="color: #888888; width: 40%;">Ma dat ve:</td>
+                                    <td style="color: #333333; font-weight: bold;" th:text="${bookingCode}">BK123456</td>
+                                </tr>
+                                <tr>
+                                    <td style="color: #888888;">Phim:</td>
+                                    <td style="color: #333333; font-weight: bold;" th:text="${movieTitle}">Ten phim</td>
+                                </tr>
+                                <tr>
+                                    <td style="color: #888888;">Ngay chieu:</td>
+                                    <td style="color: #333333;" th:text="${showDate}">01/01/2024</td>
+                                </tr>
+                                <tr>
+                                    <td style="color: #888888;">Gio chieu:</td>
+                                    <td style="color: #333333;" th:text="${showTime}">19:00</td>
+                                </tr>
+                                <tr>
+                                    <td style="color: #888888;">Tong tien:</td>
+                                    <td style="color: #e50914; font-weight: bold; font-size: 18px;" th:text="${totalAmount}">100,000 VND</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                    <p style="color: #856404; margin: 0; font-size: 14px;">
+                        <strong>Quan trong:</strong> Vui long thanh toan trong vong <strong th:text="${expirationMinutes}">15</strong> phut.
+                        Sau thoi gian nay, dat ve se tu dong bi huy.
+                    </p>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #333333; padding: 20px; text-align: center;">
+                <p style="color: #999999; margin: 0; font-size: 12px;">
+                    &copy; 2024 Cinema Booking. Moi quyen duoc bao luu.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

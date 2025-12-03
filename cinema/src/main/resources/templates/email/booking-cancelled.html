@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dat ve da bi huy</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+            <td style="background-color: #e50914; padding: 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Cinema Booking</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px;">
+                <h2 style="color: #dc3545; margin-top: 0;">Dat ve da bi huy</h2>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Xin chao <strong th:text="${customerName}">Khach hang</strong>,
+                </p>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Chung toi xin thong bao dat ve cua ban da bi huy.
+                </p>
+
+                <table width="100%" cellpadding="15" cellspacing="0" style="background-color: #f8d7da; border-radius: 8px; margin: 20px 0;">
+                    <tr>
+                        <td>
+                            <table width="100%" cellpadding="5" cellspacing="0">
+                                <tr>
+                                    <td style="color: #721c24; width: 40%;">Ma dat ve:</td>
+                                    <td style="color: #721c24; font-weight: bold;" th:text="${bookingCode}">BK123456</td>
+                                </tr>
+                                <tr>
+                                    <td style="color: #721c24;">Phim:</td>
+                                    <td style="color: #721c24;" th:text="${movieTitle}">Ten phim</td>
+                                </tr>
+                                <tr>
+                                    <td style="color: #721c24;">Ly do:</td>
+                                    <td style="color: #721c24;" th:text="${reason}">Theo yeu cau cua khach hang</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Neu ban can ho tro, vui long lien he voi chung toi.
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #333333; padding: 20px; text-align: center;">
+                <p style="color: #999999; margin: 0; font-size: 12px;">
+                    &copy; 2024 Cinema Booking. Lien he: support@cinema.com
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

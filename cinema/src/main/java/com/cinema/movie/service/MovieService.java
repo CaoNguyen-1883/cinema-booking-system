@@ -7,10 +7,14 @@ import com.cinema.movie.entity.Movie.MovieRating;
 import com.cinema.movie.entity.Movie.MovieStatus;
 import com.cinema.movie.repository.GenreRepository;
 import com.cinema.movie.repository.MovieRepository;
+import com.cinema.shared.config.RedisConfig;
 import com.cinema.shared.exception.BusinessException;
 import com.cinema.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,7 +34,9 @@ public class MovieService {
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
 
+    @Cacheable(value = RedisConfig.CACHE_MOVIE_DETAIL, key = "#id")
     public MovieResponse getMovieById(Long id) {
+        log.debug("Fetching movie {} from database", id);
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
         return MovieResponse.fromEntity(movie);
@@ -47,14 +53,18 @@ public class MovieService {
                 .map(MovieResponse::fromEntity);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_MOVIES, key = "'now_showing'")
     public List<MovieResponse> getNowShowingMovies() {
+        log.debug("Fetching now showing movies from database");
         return movieRepository.findByStatusOrderByReleaseDateDesc(MovieStatus.NOW_SHOWING)
                 .stream()
                 .map(MovieResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = RedisConfig.CACHE_MOVIES, key = "'coming_soon'")
     public List<MovieResponse> getComingSoonMovies() {
+        log.debug("Fetching coming soon movies from database");
         return movieRepository.findByStatusOrderByReleaseDateDesc(MovieStatus.COMING_SOON)
                 .stream()
                 .map(MovieResponse::fromEntity)
@@ -72,6 +82,10 @@ public class MovieService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_MOVIES, allEntries = true),
+        @CacheEvict(value = RedisConfig.CACHE_MOVIE_DETAIL, allEntries = true)
+    })
     public MovieResponse createMovie(CreateMovieRequest request) {
         Movie movie = Movie.builder()
                 .title(request.getTitle())
@@ -104,6 +118,10 @@ public class MovieService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_MOVIES, allEntries = true),
+        @CacheEvict(value = RedisConfig.CACHE_MOVIE_DETAIL, key = "#id")
+    })
     public MovieResponse updateMovie(Long id, UpdateMovieRequest request) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
@@ -135,6 +153,10 @@ public class MovieService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_MOVIES, allEntries = true),
+        @CacheEvict(value = RedisConfig.CACHE_MOVIE_DETAIL, key = "#id")
+    })
     public void deleteMovie(Long id) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));

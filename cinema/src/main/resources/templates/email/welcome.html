@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Chao mung ban!</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+            <td style="background-color: #e50914; padding: 20px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Cinema Booking</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px;">
+                <h2 style="color: #333333; margin-top: 0;">Chao mung ban den voi Cinema Booking!</h2>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Xin chao <strong th:text="${customerName}">Khach hang</strong>,
+                </p>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Cam on ban da dang ky tai khoan tai Cinema Booking. Chung toi rat vui duoc phuc vu ban!
+                </p>
+
+                <div style="background-color: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                    <h3 style="color: #155724; margin: 0 0 10px 0;">Uu dai danh cho thanh vien moi!</h3>
+                    <p style="color: #155724; margin: 0; font-size: 14px;">
+                        Dat ve dau tien voi gia uu dai. Dung bo lo!
+                    </p>
+                </div>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Voi tai khoan Cinema Booking, ban co the:
+                </p>
+                <ul style="color: #666666; line-height: 1.8;">
+                    <li>Dat ve nhanh chong, tien loi</li>
+                    <li>Tich luy diem thuong</li>
+                    <li>Nhan thong bao ve phim moi</li>
+                    <li>Quan ly lich su dat ve</li>
+                </ul>
+
+                <p style="color: #666666; line-height: 1.6;">
+                    Chuc ban co nhung trai nghiem tuyet voi!
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #333333; padding: 20px; text-align: center;">
+                <p style="color: #999999; margin: 0; font-size: 12px;">
+                    &copy; 2024 Cinema Booking. Moi quyen duoc bao luu.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

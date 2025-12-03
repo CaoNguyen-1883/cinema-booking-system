@@ -69,8 +69,8 @@ spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -88,7 +88,7 @@ spring:
 
 # Server Configuration
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:3000}
   servlet:
     context-path: /api
   error:
@@ -97,7 +97,7 @@ server:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:cinema-booking-secret-key-must-be-at-least-512-bits-long-for-hs512-algorithm-security}
+  secret: ${JWT_SECRET:f994846a2ba3e148b9d6a05d1ac071748be27d7de0a868d8507db5ab27aac9c4c1d8b8f01e29e967b19393fdcf3b63e1fbdbb3d2d64f013fd64da858225391ab}
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:1800000}
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:2592000000}
   cookie:
@@ -125,6 +125,20 @@ app:
     max-seats-per-booking: 10
   points:
     conversion-rate: 1000
+  notification:
+    email:
+      enabled: ${EMAIL_ENABLED:true}
+      from-name: Cinema Booking
+      from-address: ${MAIL_USERNAME:n22dccn200@gmail.com}
+    sms:
+      enabled: ${SMS_ENABLED:false}
+      provider: twilio
+      api-key: ${SMS_API_KEY:}
+      api-secret: ${SMS_API_SECRET:}
+      from-number: ${SMS_FROM_NUMBER:}
+    push:
+      enabled: ${PUSH_ENABLED:false}
+      firebase-config: ${FIREBASE_CONFIG:}
 
 # Actuator Configuration
 management:

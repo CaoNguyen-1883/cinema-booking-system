@@ -89,10 +89,17 @@ public class KafkaConfig {
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        return new KafkaAdmin(configs);
+        configs.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, 5000);
+        configs.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 5000);
+        KafkaAdmin admin = new KafkaAdmin(configs);
+        // Don't fail startup if Kafka is not available
+        admin.setFatalIfBrokerNotAvailable(false);
+        admin.setAutoCreate(false); // Disable auto-create topics at startup
+        return admin;
     }
 
     // ==================== Topic Creation ====================
+    // Topics will be created manually or on first use
 
     @Bean
     public NewTopic bookingCreatedTopic() {

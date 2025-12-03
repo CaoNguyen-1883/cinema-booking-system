@@ -4,10 +4,14 @@ import com.cinema.cinema.dto.*;
 import com.cinema.cinema.entity.Cinema;
 import com.cinema.cinema.entity.Cinema.CinemaStatus;
 import com.cinema.cinema.repository.CinemaRepository;
+import com.cinema.shared.config.RedisConfig;
 import com.cinema.shared.exception.BusinessException;
 import com.cinema.shared.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,13 +28,17 @@ public class CinemaService {
 
     private final CinemaRepository cinemaRepository;
 
+    @Cacheable(value = RedisConfig.CACHE_CINEMA_DETAIL, key = "#id")
     public CinemaResponse getCinemaById(Long id) {
+        log.debug("Fetching cinema {} from database", id);
         Cinema cinema = cinemaRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CINEMA_NOT_FOUND));
         return CinemaResponse.fromEntity(cinema);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_CINEMA_DETAIL, key = "'withHalls:' + #id")
     public CinemaResponse getCinemaByIdWithHalls(Long id) {
+        log.debug("Fetching cinema {} with halls from database", id);
         Cinema cinema = cinemaRepository.findByIdWithHalls(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CINEMA_NOT_FOUND));
         return CinemaResponse.fromEntityWithHalls(cinema);
@@ -58,21 +66,27 @@ public class CinemaService {
                 .map(CinemaResponse::fromEntity);
     }
 
+    @Cacheable(value = RedisConfig.CACHE_CINEMAS, key = "'active'")
     public List<CinemaResponse> getActiveCinemas() {
+        log.debug("Fetching active cinemas from database");
         return cinemaRepository.findByStatusOrderByNameAsc(CinemaStatus.ACTIVE)
                 .stream()
                 .map(CinemaResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = RedisConfig.CACHE_CINEMAS, key = "'byCity'")
     public List<CinemaResponse> getActiveCinemasGroupedByCity() {
+        log.debug("Fetching active cinemas grouped by city from database");
         return cinemaRepository.findAllActiveCinemasGroupedByCity()
                 .stream()
                 .map(CinemaResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = RedisConfig.CACHE_CINEMAS, key = "'cities'")
     public List<String> getDistinctCities() {
+        log.debug("Fetching distinct cities from database");
         return cinemaRepository.findDistinctCities();
     }
 
@@ -82,6 +96,10 @@ public class CinemaService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_CINEMAS, allEntries = true),
+        @CacheEvict(value = RedisConfig.CACHE_CINEMA_DETAIL, allEntries = true)
+    })
     public CinemaResponse createCinema(CreateCinemaRequest request) {
         if (cinemaRepository.existsByNameAndCity(request.getName(), request.getCity())) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE);
@@ -105,6 +123,11 @@ public class CinemaService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_CINEMAS, allEntries = true),
+        @CacheEvict(value = RedisConfig.CACHE_CINEMA_DETAIL, key = "#id"),
+        @CacheEvict(value = RedisConfig.CACHE_CINEMA_DETAIL, key = "'withHalls:' + #id")
+    })
     public CinemaResponse updateCinema(Long id, UpdateCinemaRequest request) {
         Cinema cinema = cinemaRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CINEMA_NOT_FOUND));
@@ -127,6 +150,11 @@ public class CinemaService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisConfig.CACHE_CINEMAS, allEntries = true),
+        @CacheEvict(value = RedisConfig.CACHE_CINEMA_DETAIL, key = "#id"),
+        @CacheEvict(value = RedisConfig.CACHE_CINEMA_DETAIL, key = "'withHalls:' + #id")
+    })
     public void deleteCinema(Long id) {
         Cinema cinema = cinemaRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CINEMA_NOT_FOUND));
