@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+      group-id: test-group
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  cache:
+    type: simple
+  mail:
+    host: localhost
+    port: 1025
+
+app:
+  jwt:
+    secret: testSecretKeyForJwtTokenGenerationMustBeLongEnough256bits
+    expiration: 3600000
+    refresh-expiration: 86400000
+  vnpay:
+    tmn-code: TEST123
+    hash-secret: TESTSECRET
+    url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    return-url: http://localhost:8080/api/payments/vnpay/return
+    ipn-url: http://localhost:8080/api/payments/vnpay/ipn
+
+storage:
+  type: local
+  local:
+    upload-dir: ./test-uploads
+
+logging:
+  level:
+    com.cinema: DEBUG
+    org.springframework.security: DEBUG
