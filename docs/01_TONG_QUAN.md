@@ -43,7 +43,7 @@ Hệ thống Cinema Booking là một nền tảng đặt vé xem phim trực tu
   - Spring Boot Actuator (Health check, metrics)
 
 - PostgreSQL 16 hoặc MySQL 8.x (Primary Database)
-- Redis 7.x
+- Redis 7.**x**
   - Caching (Movie list, Showtimes)
   - Session Management
   - Distributed Locking (Seat reservation)

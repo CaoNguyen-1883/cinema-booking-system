@@ -26,7 +26,6 @@ Khách hàng cần thanh toán online qua các phương thức phổ biến (ví
 
 Khách hàng nhận vé điện tử có mã QR code qua email và có thể lưu trữ trong tài khoản. Vé điện tử có thể được sử dụng để check-in tại rạp mà không cần in vé giấy.
 
-**BR-06: Quản lý lịch sử đặt vé**
 
 Khách hàng cần xem lại các vé đã đặt trước đó, bao gồm cả vé đã sử dụng, vé sắp tới, và vé đã hủy. Điều này giúp khách hàng theo dõi chi tiêu và lên kế hoạch xem phim.
 
